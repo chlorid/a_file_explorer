@@ -1,0 +1,61 @@
+# Copyright (c) 2008-2020 Klaus Michael Indlekofer. All rights reserved.
+#
+# m.indlekofer@gmx.de
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+
+
+CFLAGS	=	$(CFLAGS) /nologo /O2 /D_CRT_SECURE_NO_DEPRECATE /DWIN32
+
+
+
+all:	akaiutil.exe
+
+clean:
+	del /q /f akaiutil.exe *.obj
+
+
+
+akaiutil.exe:	akaiutil_main.obj akaiutil_tar.obj akaiutil_file.obj akaiutil_take.obj akaiutil_wav.obj akaiutil.obj akaiutil_io.obj commonlib.obj
+	$(CC) $(CFLAGS) /Fe$@ akaiutil_main.obj akaiutil_tar.obj akaiutil_file.obj akaiutil_take.obj akaiutil_wav.obj akaiutil.obj akaiutil_io.obj commonlib.obj
+
+akaiutil_main.obj:	akaiutil_main.c akaiutil.h akaiutil_io.h akaiutil_tar.h akaiutil_file.h akaiutil_take.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil_main.c
+
+akaiutil_tar.obj:	akaiutil_tar.c akaiutil_tar.h akaiutil_file.h akaiutil_take.h akaiutil.h akaiutil_io.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil_tar.c
+
+akaiutil_file.obj:	akaiutil_file.c akaiutil_file.h akaiutil_wav.h akaiutil.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil_file.c
+
+akaiutil_take.obj:	akaiutil_take.c akaiutil_take.h akaiutil_wav.h akaiutil.h akaiutil_io.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil_take.c
+
+akaiutil_wav.obj:	akaiutil_wav.c akaiutil_wav.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil_wav.c
+
+akaiutil.obj:	akaiutil.c akaiutil.h akaiutil_io.h akaiutil_file.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil.c
+
+akaiutil_io.obj:	akaiutil_io.c akaiutil_io.h commoninclude.h
+	$(CC) $(CFLAGS) /c akaiutil_io.c
+
+commonlib.obj:	commonlib.c commoninclude.h
+	$(CC) $(CFLAGS) /c commonlib.c
+
+
+
+# EOF
