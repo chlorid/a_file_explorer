@@ -524,17 +524,40 @@ private:
 							popup_->addSeparator();
 							itemptr = subMenu->addItem("S900");
 							tmap = new std::map<std::string,std::string>();
-							tmap->insert(std::make_pair("cmd","createS900part"));
+							tmap->insert(std::make_pair("cmd","createPart"));
 							tmap->insert(std::make_pair("path",folder));
+							tmap->insert(std::make_pair("parttype","S900"));
 							itemptr->setData(static_cast<void*>(tmap));
 							
-							itemptr = subMenu->addItem("S1000/3000");
+							itemptr = subMenu->addItem("S1000");
 							tmap = new std::map<std::string,std::string>();
-							tmap->insert(std::make_pair("cmd","createS1000part"));	
+							tmap->insert(std::make_pair("cmd","createPart"));	
 							tmap->insert(std::make_pair("path",folder));
+							tmap->insert(std::make_pair("parttype","S1000"));
+							itemptr->setData(static_cast<void*>(tmap));
+							
+							itemptr = subMenu->addItem("S1000cd (experiemntal)");
+							tmap = new std::map<std::string,std::string>();
+							tmap->insert(std::make_pair("cmd","createPart"));	
+							tmap->insert(std::make_pair("path",folder));
+							tmap->insert(std::make_pair("parttype","S1000cdrom"));
+							itemptr->setData(static_cast<void*>(tmap));
+							
+							itemptr = subMenu->addItem("S3000");
+							tmap = new std::map<std::string,std::string>();
+							tmap->insert(std::make_pair("cmd","createPart"));	
+							tmap->insert(std::make_pair("path",folder));
+							tmap->insert(std::make_pair("parttype","S3000"));
+							itemptr->setData(static_cast<void*>(tmap));
+							
+							itemptr = subMenu->addItem("S3000cd (experiemntal)");
+							tmap = new std::map<std::string,std::string>();
+							tmap->insert(std::make_pair("cmd","createPart"));	
+							tmap->insert(std::make_pair("path",folder));
+							tmap->insert(std::make_pair("parttype","S3000cdrom"));
 							itemptr->setData(static_cast<void*>(tmap));
 
- 							popup_->addMenu("icons/add.gif", "Create a Partition     ", std::move(subMenu));
+ 							popup_->addMenu("icons/add.gif", "Create Partitions     ", std::move(subMenu));
 							popup_->addSeparator();
 							
 // 							tmap = new std::map<std::string,std::string>();
@@ -745,7 +768,7 @@ private:
 			dialog.rejectWhenEscapePressed(true);
 			
 			if( cmd == "deleteDisk") 			      actionResult = deleteDisk(curdir);
-			else if( cmd == "createS1000part") 	actionResult = createPartitionS1000();
+			else if( cmd == "createPart") 			actionResult = createPartition(datamap->at("path"),datamap->at("parttype"));
 			else if( cmd == "createVol") 				actionResult = createVol(datamap->at("path"));
 			else if( cmd == "copyPart") 	      actionResult = copyPart(datamap->at("path"));
 			else if( cmd == "pastePart") 	      actionResult = pastePart(datamap->at("path"));
@@ -1333,14 +1356,24 @@ private:
 	
 	// TODO: Change in a way taht it can create more than S1000 partitions. Maybe look over how to calculate partitions to be able to create more than one.
   
-	std::string createPartitionS1000() {
+	std::string createPartition(std::string partPath,std::string parttype) {
 		std::string actionResult;
 		WDialog dialog("Create Partition");
 		dialog.setClosable(true);
 		dialog.setResizable(true);
-		dialog.rejectWhenEscapePressed(true);				
-		dialog.contents()->addWidget(cpp14::make_unique<WText>("Enter size of the new partition in MB\n WARNING! Do not create more than one partition. It will go wrong! "));
+		dialog.rejectWhenEscapePressed(true);
+		int sizeB = getFileSize("./images/" + akaidisknames.at(curdir));
+		float sizeMb = sizeB/1024.0/1024.0;
+		std::string containerText = "You have " +  std::to_string(sizeMb);
+		containerText += " MB of space available. Enter the amount of space you want to use (default: all): ";
+		dialog.contents()->addWidget(cpp14::make_unique<WText>(containerText));
 		WLineEdit *partsize = dialog.contents()->addWidget(cpp14::make_unique<WLineEdit>());
+		WLineEdit *numPart;
+		if (parttype != "S900") {
+			containerText = "now choose into how many partitions you want to divide the space: ";
+			dialog.contents()->addWidget(cpp14::make_unique<WText>(containerText));
+			numPart = dialog.contents()->addWidget(cpp14::make_unique<WLineEdit>());
+		}
 		WPushButton *ok = dialog.footer()->addWidget(cpp14::make_unique<WPushButton>("Ok"));
 		WPushButton *cancel = dialog.footer()->addWidget(cpp14::make_unique<WPushButton>("Cancel"));
 		ok->setDefault(true);
@@ -1348,14 +1381,38 @@ private:
 		ok->setFocus();
 		ok->clicked().connect(&dialog, &WDialog::accept);
 		cancel->clicked().connect(&dialog, &WDialog::reject);
-		std::cout << "create part partsize: " << partsize->text().toUTF8();
+		
 		//TODO: the partsize stoi crashes everything. why?
 // 				int psize = std::stoi(partsize->text().toUTF8());
-		int psize = 5*1024*1024;
+		
 // 				*1024*1024;
 		if (dialog.exec() == DialogCode::Accepted) {
 			free_blk_cache();
-			int ret=akai_wipe_harddisk(curdiskp,psize,psize,0,0);
+			
+// 			int psize = 5*1024*1024;
+			int usedSpace;
+			int partSize ;
+			try {
+				if (partsize->text().toUTF8().empty()) usedSpace = sizeB/AKAI_HD_BLOCKSIZE;
+				else {
+// 					usedSpace = std::stoi(partsize->text().toUTF8())*256;
+					usedSpace = std::stoi(partsize->text().toUTF8())*(1024*1024)/AKAI_HD_BLOCKSIZE;
+					
+					std::cout << "use given val " << usedSpace << std::endl;
+				}
+				partSize  = usedSpace/std::stoi(numPart->text().toUTF8());
+			}
+			catch (std::exception e) {
+				return "size or number of partitions invalid.";
+			}
+			int ret;
+			if (parttype == "S900") ret=akai_wipe_harddisk(curdiskp,usedSpace,usedSpace,0,0);
+			else if (parttype == "S1000") ret=akai_wipe_harddisk(curdiskp,partSize,usedSpace,0,0);
+			else if (parttype == "S1000cdrom") ret=akai_wipe_harddisk(curdiskp,partSize,usedSpace,0,1);
+			else if (parttype == "S3000") ret=akai_wipe_harddisk(curdiskp,partSize,usedSpace,1,0);
+			else if (parttype == "S3000cdrom") ret=akai_wipe_harddisk(curdiskp,partSize,usedSpace,1,1);
+			else return "invalid format!";
+			
 			/* Note: blksize might have changed now!!! */
 			if (ret!=0){
 				actionResult = "format error!";
@@ -1383,6 +1440,12 @@ private:
 	return actionResult;	
 	}
 	
+	long getFileSize(std::string filename) {
+		std::cout << "getfilesize input: " << filename << std::endl;
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+	}
 	
 	std::string wipeVol(std::string volPath, bool deleteVol = false) {
 	
@@ -1733,7 +1796,7 @@ int loadAkaidiskDir(std::string akaidir = "./images") {
 }
 
 // load akai disk by path
-int loadAkaiDisk(std::string akaidisk,std::string akaidir="./") {
+int loadAkaiDisk(std::string akaidisk,std::string akaidir="") {
 
     int readonly=0;
     int pseudodisksize=0;

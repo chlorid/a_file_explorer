@@ -345,7 +345,7 @@ wav2sample1 [<volume-path>/]<wav-file> [<file-index>]		convert external WAV file
 =wav2s1
 =putwav1
 
-file:///home/ich/akai/wthello/icons [<volume-path>/]<wav-file> [<file-index>]		convert external WAV file into S3000 sample file (use *.wav for all local WAV files)
+[<volume-path>/]<wav-file> [<file-index>]		convert external WAV file into S3000 sample file (use *.wav for all local WAV files)
 =wav2s3
 =putwav3
 

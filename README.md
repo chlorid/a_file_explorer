@@ -39,7 +39,7 @@ Create a symbolic link from the resources folder that came with your Wt framewor
 
 execute the binary as follows:
 
-./augui --docroot . --http-address 0.0.0.0 --http-port 9091
+./afe.wt --docroot . --http-address 0.0.0.0 --http-port 9091 --config wt_config.xml
 
 This starts a webserver providing the program for everyone in the network on all IP Adresses of the computer (0.0.0.0)on the given Port(9091).
 
@@ -47,4 +47,8 @@ Now open a browser and enter http://hostname:port (on a local installation for e
 
 # Disclaimer
 
-This program comes without any warranty and is still under development! Dont make me responsible if you lose data. Better commit a solution for the problem.
+I'm not associated in any way with Akai.
+
+This program comes without any warranty and is still under development! Dont make me responsible if you lose data. If you locate the problem, you are more than welcome to contribute a solution.
+
+
