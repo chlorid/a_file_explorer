@@ -34,6 +34,12 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WText.h>
 
+#include <Wt/WAnchor.h>
+#include <Wt/Http/Request.h>
+#include <Wt/Http/Response.h>
+#include <Wt/WObject.h>
+#include <Wt/WResource.h>
+#include <Wt/WLink.h>
 
 // #include <Wt/Chart/WPieChart.h>
 
@@ -53,7 +59,120 @@ extern "C" {
 
 using namespace Wt;
 
+class AkHelpers {
+	
+public:
+	
+	static std::string getFileName(const std::string& s, bool raw = false) {
+		char sep = '/';
+		#ifdef _WIN32
+		sep = '\\';
+		#endif
+		size_t i = s.rfind(sep, s.length());
+		if (i != std::string::npos) 
+		{
+		std::string filename = s.substr(i+1, s.length() - i);
+		if (raw == true) return filename;
+		size_t lastindex = filename.find_last_of("."); 
+		std::string rawname = filename.substr(0, lastindex); 
+		return(rawname);
+		}
 
+		return("");
+	}
+};
+
+class AkaiFileResource : public Wt::WResource
+{
+protected:
+	std::string filePath;
+public:
+    AkaiFileResource(std::string filePathIn) : WResource() {
+			filePath = filePathIn;
+			std::cout << "**************************create file resource from: " << filePath << std::endl;
+			suggestFileName(AkHelpers::getFileName(filePath,true));
+    }
+
+    ~AkaiFileResource() {
+	beingDeleted();
+    }
+
+    void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
+			response.setMimeType("application/octet-stream");
+			struct file_s tmpfile;
+			char fileNamec[40];
+			char filePathc[256];
+			sprintf(fileNamec,"%s",AkHelpers::getFileName(filePath).c_str());
+			sprintf(filePathc,"%s",filePath.c_str());
+			
+			
+			if (change_curdir(filePathc,0,fileNamec,0)<0){
+				std::cout << "Error. Dir not found:  " <<filePath << " | " << fileNamec << std::endl;
+				return ;
+			}
+			if (akai_find_file(curvolp,&tmpfile,fileNamec)<0){
+				std::cout << "Error. File not found:  " <<filePath << " | " << fileNamec << std::endl;
+				return;
+			}
+			
+			unsigned char outbuf[tmpfile.size+1];
+			if (akai_read_file(0, outbuf,&tmpfile,0,tmpfile.size)<0){
+					std::cout << "Error. Could not read file!:  " << filePath << " | " << fileNamec << std::endl;
+			}
+			// write data to stream.
+			for (unsigned int i=0;i<tmpfile.size;i++) {
+				response.out() << outbuf[i];
+			}
+    }
+};
+
+class AkaiSampleFileResource : public AkaiFileResource {
+	private:
+		std::string fileNamew;
+		std::string fileName;
+		
+public:
+	  AkaiSampleFileResource(std::string filePathIn) : AkaiFileResource(filePathIn) {
+			filePath = filePathIn;
+			fileName = AkHelpers::getFileName(filePath);
+			fileNamew = fileName.substr(0,fileName.find_last_of('.'))+".wav";
+			suggestFileName(fileNamew);
+    }
+    
+		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
+			response.setMimeType("application/octet-stream");
+			struct file_s tmpfile;
+			char fileNamec[40];
+			char filePathc[256];
+			
+			sprintf(fileNamec,"%s",fileName.c_str());
+			sprintf(filePathc,"%s",filePath.c_str());
+			
+			
+			if (change_curdir(filePathc,0,fileNamec,0)<0){
+				std::cout << "Error. Dir not found:  " <<filePath << " | " << fileNamec << std::endl;
+				return ;
+			}
+			if (akai_find_file(curvolp,&tmpfile,fileNamec)<0){
+				std::cout << "Error. File not found:  " <<filePath << " | " << fileNamec << std::endl;
+				return;
+			}
+			
+			if (akai_sample2wav(&tmpfile,-1,NULL,NULL,SAMPLE2WAV_ALL)<0){
+							PRINTF_ERR("export error\n");
+			}
+			std::cout << "sample2wav filenamec:  " << fileNamec << std::endl;
+			
+			std::cout << "sample2wav filenamew :  " << fileNamew << std::endl;
+			std::ifstream input( fileNamew );
+			
+			response.out() << input.rdbuf();
+			input.close();
+		}	
+};
+
+
+						
 
 /*! \class TreeViewDragDrop
  *  \brief Main application class.
@@ -713,11 +832,28 @@ private:
 							itemptr = popup_->addItem("icons/folder_new.gif", "Upload File");
 							itemptr->setData(static_cast<void*>(tmap));
 							
+							
+							// the link has to be added here.TODO: how can we get that link style away?
+							auto fileResource = std::make_shared<AkaiFileResource>(folder);		
+							Wt::WLink link = Wt::WLink(fileResource);
+							link.setTarget(Wt::LinkTarget::NewWindow);
 							tmap = new std::map<std::string,std::string>();
 							tmap->insert(std::make_pair("cmd","exportFile"));	
 							tmap->insert(std::make_pair("path",folder));
-							itemptr = popup_->addItem("icons/folder_new.gif", "Export File");
+							itemptr = popup_->addItem("icons/folder_new.gif","Export Binary");
+							itemptr->setLink(link);
 							itemptr->setData(static_cast<void*>(tmap));
+							
+							fileResource = std::make_shared<AkaiSampleFileResource>(folder);		
+							link = Wt::WLink(fileResource);
+							link.setTarget(Wt::LinkTarget::NewWindow);
+							tmap = new std::map<std::string,std::string>();
+							tmap->insert(std::make_pair("cmd","exportFile"));	
+							tmap->insert(std::make_pair("path",folder));
+							itemptr = popup_->addItem("icons/folder_new.gif","Export Sample ");
+							itemptr->setLink(link);
+							itemptr->setData(static_cast<void*>(tmap));
+							
 							
 							
 							
@@ -780,7 +916,7 @@ private:
 			else if( cmd == "copyFile") 	      actionResult = copyFile(datamap->at("path"));
 			else if( cmd == "pasteFile") 	      actionResult = pasteFile(datamap->at("path"));
 			else if( cmd == "deleteFile") 	    actionResult = deleteFile(datamap->at("path"));
-			
+			else if( cmd == "exportFile") 	    actionResult = "nopopup";// TODO: find a way to show error messages?
 			// if we didnt find any know  command, we let the user know.
 			else {
 			
@@ -810,12 +946,35 @@ private:
     }
   }
   
+  std::string exportFile(std::string filePath) {		
+	std::string fileName = AkHelpers::getFileName(filePath);
+		
+  
+
+	if (endsWith(fileName,".P1")){
+		return "sorry, not implemented yet.";
+	}
+	else if (endsWith(fileName,".P3")){
+		
+		
+	}
+	else {
+		return "invalid file type";
+	}
+	
+// 		auto fileResource = std::make_shared<AkaiFileResource>(fileName);		
+// Wt::WLink link = Wt::WLink(fileResource);
+// link.setTarget(Wt::LinkTarget::NewWindow);
+// Wt::WAnchor *anchor = container->addNew<Wt::WAnchor>(link,"Download file");
+
+	}
+  
   std::string deleteFile(std::string filePath) {
 		struct file_s tmpfile;
 		char filepathc[256];
 		char fileNamec[40];
 		sprintf(filepathc,"%s",filePath.c_str());
-		sprintf(fileNamec,"%s",getFileName(filePath).c_str());
+		sprintf(fileNamec,"%s",AkHelpers::getFileName(filePath).c_str());
 
 		save_curdir(1); /* 1: could be modifications */
 		if (change_curdir(filepathc,0,fileNamec,0)<0){
@@ -837,7 +996,7 @@ private:
 		/* find file in current directory */
 		if (akai_find_file(curvolp,&tmpfile,fileNamec)<0){
 			restore_curdir();
-			return "file not found.";
+			return "file not found: " + std::string(fileNamec);;
 		}
 		/* delete file */
 		if (akai_delete_file(&tmpfile)<0){
@@ -858,7 +1017,7 @@ private:
 			char fileNamec[40];
 			char sourceDirc[256];
 			char destinationc[256];
-			sprintf(fileNamec,"%s",getFileName(currCopyPathFile).c_str());
+			sprintf(fileNamec,"%s",AkHelpers::getFileName(currCopyPathFile).c_str());
 			sprintf(sourceDirc,"%s",currCopyPathFile.c_str());
 			sprintf(destinationc,"%s",filePath.c_str());
 
@@ -949,7 +1108,7 @@ private:
 		sprintf(currCopyPathVolc,"%s",currCopyPathVol.c_str());
 			
 		char destNamec[256];
-		sprintf(destNamec,"%s",getFileName(volPath).c_str());
+		sprintf(destNamec,"%s",AkHelpers::getFileName(volPath).c_str());
 
 		/* source */ //TODO: should we check this?
 // 		if (cmdnr==CMD_COPYVOLI){
@@ -1021,22 +1180,7 @@ private:
 		return "nopopup";
 	}
 	
-	std::string getFileName(const std::string& s) {
-		char sep = '/';
-		#ifdef _WIN32
-		sep = '\\';
-		#endif
-		size_t i = s.rfind(sep, s.length());
-		if (i != std::string::npos) 
-		{
-		std::string filename = s.substr(i+1, s.length() - i);
-		size_t lastindex = filename.find_last_of("."); 
-		std::string rawname = filename.substr(0, lastindex); 
-		return(rawname);
-		}
 
-		return("");
-	}
   
   // wipe option : 0 default
 	//							 1 	S3000cdrom

@@ -54,7 +54,7 @@ typedef int ssize_t;
 #define OFF_T __int64
 #define OFF64_T __int64
 
-#define OPEN _open
+#define OPEN fmemopen
 #define CLOSE _close
 #define READ _read
 #define WRITE _write
