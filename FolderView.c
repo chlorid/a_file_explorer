@@ -14,9 +14,7 @@
 const char *FolderView::FileSelectionMimeType
   = "application/x-computers-selection";
 
-FolderView::FolderView()
-  : WTreeView()
-{
+FolderView::FolderView() : WTreeView() {
   /*
    * Accept drops for the custom mime type.
    */

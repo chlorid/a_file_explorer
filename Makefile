@@ -31,7 +31,7 @@ CFLAGS = -Wall -std=c++14 -fPIC -I./$(AKAIDIR)
 LIBS = -lwt -lwthttp 
 
 # define the C source files
-SRCS = TreeViewDragDrop.c FolderView.c
+SRCS = TreeViewDragDrop.c FolderView.c AkaiProgram.c
 
 AKAI_TAR = akaiutil_tar.c akaiutil_tar.h akaiutil_file.h akaiutil_take.h akaiutil.h akaiutil_io.h commoninclude.h
 AKAI_FILE = akaiutil_file.c akaiutil_file.h akaiutil_wav.h akaiutil.h commoninclude.h

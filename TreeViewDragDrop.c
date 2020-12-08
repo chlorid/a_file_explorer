@@ -29,6 +29,7 @@
 #include <Wt/WTreeView.h>
 #include <Wt/WText.h>
 #include <Wt/WVBoxLayout.h>
+#include <Wt/WHBoxLayout.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WMessageBox.h>
 #include <Wt/WPushButton.h>
@@ -47,6 +48,7 @@
 
 // #include "CsvUtil.h"
 #include "FolderView.h"
+#include "AkaiProgram.h"
 
 //akai
 // This Extern C should actually be enough. I still had to wrap the C header in another extern C. Why is that? Any solution for that?
@@ -353,14 +355,20 @@ private:
     layout->addWidget(createTopBar(), 0, 0);
 		// add folder view
     layout->addWidget(createFolderView(), 1, 0);
-    layout->setColumnResizable(0);
+    layout->setColumnResizable(1);
 		// add file view
-    std::unique_ptr<WVBoxLayout> vbox = cpp14::make_unique<WVBoxLayout>();
-    vbox->addWidget(fileView(), 1);
-    vbox->setResizable(0);
+    std::unique_ptr<WHBoxLayout> vbox = cpp14::make_unique<WHBoxLayout>();
+
+    auto fw = vbox->addWidget(fileView(),1);
+		fw->hide();
+		AkaiKeyGroupEditor *ed = new AkaiKeyGroupEditor();
+		
+		auto progwidget = vbox->addWidget(std::move(ed->loadProgramFile("lala","dada")),1);
+    vbox->setResizable(1);
     layout->addLayout(std::move(vbox), 1, 1);
+// 		progwidget->hide();
 		// add hintbox it's from the example, but maybe it's good to have it, to fill it with something useful.
-    layout->addWidget(aboutDisplay(), 2, 0, 1, 2);
+//     layout->addWidget(aboutDisplay(), 2, 0, 1, 2);
 
     /*
      * Let row 1 and column 1 take the excess space.
@@ -372,6 +380,14 @@ private:
 				
 
   }
+  
+//   std::unique_ptr<AkaiKeyGroupEditor> addKeyEditorWindow() {
+// 		auto ret = cpp14::make_unique<WContainerWidget>();
+// // 		AkaiKeyGroupEditor ak("lala");
+// // 		ret->addWidget(cpp14::make_unique<AkaiKeyGroupEditor>("lll"));
+// 		return cpp14::make_unique<AkaiKeyGroupEditor>("lll");
+// 	}
+	
 
   /*! \brief Creates a top button bar widget.
 	 * 				at the moment we use curdir instead of the data shipped by the item. I still left in the commented out line for sending the folder maybe we need it later.
@@ -493,6 +509,35 @@ private:
 // 		fileMenu_->close();
 	}
 	
+	//TODO: Not functional!
+	std::string renameDiskImage(std::string src) {
+		std::string actionResult;
+		WDialog dialog("Rename Disk");
+		dialog.contents()->addWidget(cpp14::make_unique<WText>("Enter the new Disk name: "));
+		WLineEdit *newDiskName = dialog.contents()->addWidget(cpp14::make_unique<WLineEdit>());
+		WPushButton *ok = dialog.footer()->addWidget(cpp14::make_unique<WPushButton>("Ok"));
+		WPushButton *cancel = dialog.footer()->addWidget(cpp14::make_unique<WPushButton>("Cancel"));
+		ok->setDefault(true);
+		cancel->setDefault(false);
+
+		newDiskName->setFocus();
+		ok->clicked().connect(&dialog, &WDialog::accept);
+		cancel->clicked().connect(&dialog, &WDialog::reject);
+/*
+		if (dialog.exec() == DialogCode::Accepted) {//TODO??? How do we get the actual image location? We have only the name!
+			if(std::rename(akaidisknames.at("disk"+std::to_string(curdiskp->index)).c_str(), newDiskName) < 0) {
+				actionResult = "Could not move file from " + src+ " to " + newPath + ". Errno: " + std::to_string(errno);  
+			}
+		actionResult =  "nopopup";
+		}
+		else {
+			actionResult = "Renaming cancelled";
+		}*/
+		return actionResult;
+	}
+	
+	
+	
 	std::string importDisk() {
 		std::string actionResult;
 
@@ -592,8 +637,7 @@ private:
   /*! \brief Creates the file table view (a WTableView)
    */
   std::unique_ptr<WTableView> fileView() {
-    auto tableView
-        = cpp14::make_unique<WTableView>();
+    auto tableView = cpp14::make_unique<WTableView>();
 
     tableView->setAlternatingRowColors(true);
 
@@ -633,7 +677,7 @@ private:
   /*! \brief Edit a particular row. TODO: from the example. Can probably gO?
    */
   void editFile(const WModelIndex& item) {
-//     dialog_ = cpp14::make_unique<FileEditDialog>(fileView_->model(), item);
+		
   }
 
 
@@ -794,12 +838,12 @@ private:
 					// 		tmap->insert(std::make_pair("path",folder));
 							itemptr = popup_->addItem("icons/delete.gif", "Delete disk image");
 							itemptr->setData(static_cast<void*>(tmap));
-// This needs to go to the right click disk menu							
-// 							tmap = new std::map<std::string,std::string>();
-// 							tmap->insert(std::make_pair("cmd","closeDisk"));	
-// 							tmap->insert(std::make_pair("path",folder));
-// 							itemptr = fileMenu_->addItem("icons/folder_new.gif", "Close disk image");
-// 							itemptr->setData(static_cast<void*>(tmap));
+
+							tmap = new std::map<std::string,std::string>();
+							tmap->insert(std::make_pair("cmd","renameDiskImage"));	
+							tmap->insert(std::make_pair("path",folder));
+							itemptr = fileMenu_->addItem(/*"icons/folder_new.gif",*/ "Rename Disk Image");
+							itemptr->setData(static_cast<void*>(tmap));
 							
 							tmap = new std::map<std::string,std::string>();
 							tmap->insert(std::make_pair("cmd","diskinfo"));	
@@ -1013,6 +1057,7 @@ private:
 			else if( cmd == "pasteFile") 	      actionResult = pasteFile(datamap->at("path"));
 			else if( cmd == "deleteFile") 	    actionResult = deleteFile(datamap->at("path"));
 			else if( cmd == "exportFile") 	    actionResult = "nopopup";// TODO: find a way to show error messages?
+// 			else if( cmd == "renameDiskImage") 	actionResult = renameDiskImage(datamap->at("path"));// not yet ready
 			// if we didnt find any know  command, we let the user know.
 			else {
 			
