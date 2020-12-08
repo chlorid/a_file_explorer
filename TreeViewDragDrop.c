@@ -40,6 +40,8 @@
 #include <Wt/WObject.h>
 #include <Wt/WResource.h>
 #include <Wt/WLink.h>
+#include <Wt/WFileUpload.h>
+#include <Wt/WProgressBar.h>
 
 // #include <Wt/Chart/WPieChart.h>
 
@@ -86,11 +88,17 @@ class AkaiFileResource : public Wt::WResource
 {
 protected:
 	std::string filePath;
+	std::string fileNamew;
+	std::string fileName;
+	
 public:
     AkaiFileResource(std::string filePathIn) : WResource() {
 			filePath = filePathIn;
 			std::cout << "**************************create file resource from: " << filePath << std::endl;
 			suggestFileName(AkHelpers::getFileName(filePath,true));
+			fileName = AkHelpers::getFileName(filePath);
+			fileNamew = fileName.substr(0,fileName.find_last_of('.'))+".wav";
+			suggestFileName(fileName);
     }
 
     ~AkaiFileResource() {
@@ -114,62 +122,103 @@ public:
 				std::cout << "Error. File not found:  " <<filePath << " | " << fileNamec << std::endl;
 				return;
 			}
-			
-			unsigned char outbuf[tmpfile.size+1];
-			if (akai_read_file(0, outbuf,&tmpfile,0,tmpfile.size)<0){
-					std::cout << "Error. Could not read file!:  " << filePath << " | " << fileNamec << std::endl;
+// // 			std::cout << "file t<pe: " << tmpfile.type << std::endl;
+// 				if (tmpfile.type == 115){
+// 					fileitem->setIcon("icons/note.gif");
+// 					ftype = "S1000 Sample";
+// 				}
+// 				else if (tmpfile.type == 112){
+					
+			if(tmpfile.type == 243 || tmpfile.type == 115) {
+				suggestFileName(fileNamew);
+// 				std::cout << "S3000 Sample: " << tmpfile.type << std::endl;
+				if (akai_sample2wav(&tmpfile,-1,NULL,NULL,SAMPLE2WAV_ALL)<0){
+							PRINTF_ERR("export error\n");
+				}
+				std::cout << "sample2wav filenamec:  " << fileNamec << std::endl;
+				
+				std::cout << "sample2wav filenamew :  " << fileNamew << std::endl;
+				std::ifstream input( fileNamew );
+				
+				response.out() << input.rdbuf();
+				input.close();
+				remove(fileNamew.c_str());
 			}
-			// write data to stream.
-			for (unsigned int i=0;i<tmpfile.size;i++) {
-				response.out() << outbuf[i];
+			// S1000/S3000 Programs
+ 			else if(tmpfile.type == 240 || tmpfile.type == 112) {
+				if(tmpfile.type == 240 ) suggestFileName(fileName + ".P3");
+				else 										 suggestFileName(fileName + ".P1");
+				// 				std::cout << "S3000 program: " << tmpfile.type << std::endl;
+
+				unsigned char outbuf[tmpfile.size+1];
+				if (akai_read_file(0, outbuf,&tmpfile,0,tmpfile.size)<0){
+						std::cout << "Error. Could not read file!:  " << filePath << " | " << fileNamec << std::endl;
+				}
+				// write data to stream.
+				for (unsigned int i=0;i<tmpfile.size;i++) {
+					response.out() << outbuf[i];
+				}
+			}
+			else {
+				std::cout << "unknown file: " << tmpfile.type << std::endl;
+				suggestFileName(fileName + ".unknown");
+				unsigned char outbuf[tmpfile.size+1];
+				if (akai_read_file(0, outbuf,&tmpfile,0,tmpfile.size)<0){
+						std::cout << "Error. Could not read file!:  " << filePath << " | " << fileNamec << std::endl;
+				}
+				// write data to stream.
+				for (unsigned int i=0;i<tmpfile.size;i++) {
+					response.out() << outbuf[i];
+				}
 			}
     }
 };
 
-class AkaiSampleFileResource : public AkaiFileResource {
-	private:
-		std::string fileNamew;
-		std::string fileName;
-		
-public:
-	  AkaiSampleFileResource(std::string filePathIn) : AkaiFileResource(filePathIn) {
-			filePath = filePathIn;
-			fileName = AkHelpers::getFileName(filePath);
-			fileNamew = fileName.substr(0,fileName.find_last_of('.'))+".wav";
-			suggestFileName(fileNamew);
-    }
-    
-		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
-			response.setMimeType("application/octet-stream");
-			struct file_s tmpfile;
-			char fileNamec[40];
-			char filePathc[256];
-			
-			sprintf(fileNamec,"%s",fileName.c_str());
-			sprintf(filePathc,"%s",filePath.c_str());
-			
-			
-			if (change_curdir(filePathc,0,fileNamec,0)<0){
-				std::cout << "Error. Dir not found:  " <<filePath << " | " << fileNamec << std::endl;
-				return ;
-			}
-			if (akai_find_file(curvolp,&tmpfile,fileNamec)<0){
-				std::cout << "Error. File not found:  " <<filePath << " | " << fileNamec << std::endl;
-				return;
-			}
-			
-			if (akai_sample2wav(&tmpfile,-1,NULL,NULL,SAMPLE2WAV_ALL)<0){
-							PRINTF_ERR("export error\n");
-			}
-			std::cout << "sample2wav filenamec:  " << fileNamec << std::endl;
-			
-			std::cout << "sample2wav filenamew :  " << fileNamew << std::endl;
-			std::ifstream input( fileNamew );
-			
-			response.out() << input.rdbuf();
-			input.close();
-		}	
-};
+// class AkaiSampleFileResource : public AkaiFileResource {
+// 	private:
+// 		std::string fileNamew;
+// 		std::string fileName;
+// 		
+// public:
+// 	  AkaiSampleFileResource(std::string filePathIn) : AkaiFileResource(filePathIn) {
+// 			filePath = filePathIn;
+// 			fileName = AkHelpers::getFileName(filePath);
+// 			fileNamew = fileName.substr(0,fileName.find_last_of('.'))+".wav";
+// 			suggestFileName(fileNamew);
+//     }
+//     
+// 		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) {
+// 			response.setMimeType("application/octet-stream");
+// 			struct file_s tmpfile;
+// 			char fileNamec[40];
+// 			char filePathc[256];
+// 			
+// 			sprintf(fileNamec,"%s",fileName.c_str());
+// 			sprintf(filePathc,"%s",filePath.c_str());
+// 			
+// 			
+// 			if (change_curdir(filePathc,0,fileNamec,0)<0){
+// 				std::cout << "Error. Dir not found:  " <<filePath << " | " << fileNamec << std::endl;
+// 				return ;
+// 			}
+// 			if (akai_find_file(curvolp,&tmpfile,fileNamec)<0){
+// 				std::cout << "Error. File not found:  " <<filePath << " | " << fileNamec << std::endl;
+// 				return;
+// 			}
+// 			
+// 			if (akai_sample2wav(&tmpfile,-1,NULL,NULL,SAMPLE2WAV_ALL)<0){
+// 							PRINTF_ERR("export error\n");
+// 			}
+// 			std::cout << "sample2wav filenamec:  " << fileNamec << std::endl;
+// 			
+// 			std::cout << "sample2wav filenamew :  " << fileNamew << std::endl;
+// 			std::ifstream input( fileNamew );
+// 			
+// 			response.out() << input.rdbuf();
+// 			input.close();
+// 			remove(fileNamew.c_str());
+// 		}	
+// };
 
 
 						
@@ -347,7 +396,7 @@ private:
 		tmap = new std::map<std::string,std::string>();
 		tmap->insert(std::make_pair("cmd","importDisk"));	
 // 		tmap->insert(std::make_pair("path",folder));
-		itemptr = fileMenu_->addItem("icons/import.gif", "Import disk image");
+		itemptr = fileMenu_->addItem("icons/import.gif", "Import Disk Image(s)");
 		itemptr->setData(static_cast<void*>(tmap));
 		
 		tmap = new std::map<std::string,std::string>();
@@ -424,7 +473,8 @@ private:
 		cmd = datamap->at("cmd");
 		std::cout << "fileMenu_ action. Command: " << datamap->at("cmd") << "curdir: " << curdir<< std::endl;
 			if( cmd == "openDisk")	actionResult = openDisk();
-			if( cmd == "createDisk") actionResult =	createDisk();
+			else if( cmd == "createDisk") actionResult =	createDisk();
+			else if( cmd == "importDisk") actionResult =	importDisk();
 			else if ( cmd == "akaireload") actionResult =	akaireload(true);
 			else {
 				actionResult = "Sorry ,Action '" + theResult->text().toUTF8() + "' is not implemented.";
@@ -441,6 +491,52 @@ private:
 			contextMenuActionBox_->show();	
 		}
 // 		fileMenu_->close();
+	}
+	
+	std::string importDisk() {
+		std::string actionResult;
+
+		WDialog dialog("Import Disk");
+		dialog.contents()->addWidget(cpp14::make_unique<WText>("Choose one or more disk images to import\n"));
+		Wt::WFileUpload *upload = dialog.contents()->addWidget(std::make_unique<Wt::WFileUpload>());		
+		upload->setProgressBar(Wt::cpp14::make_unique<Wt::WProgressBar>());
+		upload->setMultiple(true);
+		upload->changed().connect([=] {
+      upload->upload();
+			upload->hide();
+			std::cout << "Start file upload..." << std::endl;
+      return "nopopup";
+		});
+
+		// React to a succesfull upload.
+		upload->uploaded().connect(&dialog, &Wt::WDialog::accept);
+
+		// React to a file upload problem.
+		upload->fileTooLarge().connect(&dialog, &Wt::WDialog::accept);
+
+		if (dialog.exec() == DialogCode::Accepted) {
+			std::vector<Wt::Http::UploadedFile> files =  upload->uploadedFiles();
+			for (std::vector<Wt::Http::UploadedFile>::const_iterator i = files.begin(); i != files.end(); ++i) {
+				Wt::Http::UploadedFile lala = *i;
+				i->stealSpoolFile();
+				
+				std::string newpath = "./images/" + i->clientFileName();
+				std::cout << "File upload is finished.Spool file:" <<  i->spoolFileName() << std::endl;
+				// move file to image folder.
+				actionResult += "File " + newpath + " successfully uploaded.Copy to image folder... ";
+				if(std::rename(i->spoolFileName().c_str(), newpath.c_str()) < 0) {
+					actionResult += "Could not move spool file to " + newpath + ". Errno: " + std::to_string(errno);  
+// 					return "error " + errno;
+				}
+				actionResult+="OK<br>\n";
+			}
+// 			return "OK";
+			}
+			else {
+				actionResult =  "Upload error. File too large?";
+			}	
+			akaireload(true);
+		return actionResult;
 	}
 	
 // TODO: move these little function to inline code.	
@@ -840,19 +936,19 @@ private:
 							tmap = new std::map<std::string,std::string>();
 							tmap->insert(std::make_pair("cmd","exportFile"));	
 							tmap->insert(std::make_pair("path",folder));
-							itemptr = popup_->addItem("icons/folder_new.gif","Export Binary");
+							itemptr = popup_->addItem("icons/folder_new.gif","Export...");
 							itemptr->setLink(link);
 							itemptr->setData(static_cast<void*>(tmap));
 							
-							fileResource = std::make_shared<AkaiSampleFileResource>(folder);		
-							link = Wt::WLink(fileResource);
-							link.setTarget(Wt::LinkTarget::NewWindow);
-							tmap = new std::map<std::string,std::string>();
-							tmap->insert(std::make_pair("cmd","exportFile"));	
-							tmap->insert(std::make_pair("path",folder));
-							itemptr = popup_->addItem("icons/folder_new.gif","Export Sample ");
-							itemptr->setLink(link);
-							itemptr->setData(static_cast<void*>(tmap));
+// 							fileResource = std::make_shared<AkaiSampleFileResource>(folder);		
+// 							link = Wt::WLink(fileResource);
+// 							link.setTarget(Wt::LinkTarget::NewWindow);
+// 							tmap = new std::map<std::string,std::string>();
+// 							tmap->insert(std::make_pair("cmd","exportFile"));	
+// 							tmap->insert(std::make_pair("path",folder));
+// 							itemptr = popup_->addItem("icons/folder_new.gif","Export Sample ");
+// 							itemptr->setLink(link);
+// 							itemptr->setData(static_cast<void*>(tmap));
 							
 							
 							
@@ -1775,17 +1871,25 @@ private:
 								
 				fileitem = createFileFolderItem(tmpfile.name,filepath,true);
 		
-				if (endsWith(tmpfile.name,".S1")){
+				if (tmpfile.type == 115){
 					fileitem->setIcon("icons/note.gif");
-					ftype = "Sample";
+					ftype = "S1000 Sample";
 				}
-				else if (endsWith(tmpfile.name,".P1")) {
+				else if (tmpfile.type == 112){
 					fileitem->setIcon("icons/code.gif");
-					ftype = "Program";
+					ftype = "S1000 Program";
+				}
+				else if (tmpfile.type == 243){
+					fileitem->setIcon("icons/note.gif");
+					ftype = "S3000 Sample";
+				}
+				else if (tmpfile.type == 240){
+					fileitem->setIcon("icons/code.gif");
+					ftype = "S3000 Program";
 				}
 				else {
 					fileitem->setIcon("icons/file.gif");
-					ftype = "Unknown";
+					ftype = "Unknown/" + std::to_string(tmpfile.type);
 				}
 				
 // 				std::string curpath = "/disk/" +  std::to_string(curvolp->partp->diskp->index) + "/" + curvolp->partp->letter + "/" + tmpfile.name;
@@ -1799,7 +1903,7 @@ private:
 				items.push_back(std::move(createFileFolderItem(ftype,filepath)));
 				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.bstart),filepath)));		
 				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.size),filepath)));
-				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.type),filepath)));
+// 				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.type),filepath)));
 				char ostag[4];
 				sprintf(ostag,"%u",*tmpfile.tag);
 				items.push_back(std::move(createFileFolderItem(ostag,filepath)));
@@ -1809,8 +1913,8 @@ private:
 				fileModel->setHeaderData(1, Orientation::Horizontal, cpp17::any(std::string("Type")));
 				fileModel->setHeaderData(2, Orientation::Horizontal, cpp17::any(std::string("startbyte")));
 				fileModel->setHeaderData(3, Orientation::Horizontal, cpp17::any(std::string("size [b]")));
-				fileModel->setHeaderData(4, Orientation::Horizontal, cpp17::any(std::string("type")));
-				fileModel->setHeaderData(5, Orientation::Horizontal, cpp17::any(std::string("osver")));
+// 				fileModel->setHeaderData(4, Orientation::Horizontal, cpp17::any(std::string("type")));
+				fileModel->setHeaderData(4, Orientation::Horizontal, cpp17::any(std::string("osver")));
 // 				fileModel->setHeaderData(6, Orientation::Horizontal, cpp17::any(std::string("header reserved")));
 			}			
 		}
