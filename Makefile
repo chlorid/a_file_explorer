@@ -28,7 +28,7 @@ CFLAGS = -Wall -std=c++14 -fPIC -I./$(AKAIDIR)
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lwt -lwthttp 
+LIBS = -static -lwt -lwthttp 
 
 # define the C source files
 SRCS = TreeViewDragDrop.c FolderView.c AkaiProgram.c
@@ -105,7 +105,8 @@ $(info akaiobjs: $(addprefix $(AKAIDIR)/,$(notdir $(patsubst %.c,%.o,$(wildcard 
 # Enumerating of every *.c as *.o and using that as dependency
 $(AKAI): $(addprefix $(AKAIDIR)/,$(notdir $(patsubst %.c,%.o,$(wildcard $(AKAIDIR)/*.c))))
 	ar -r -o $(OUT_DIR)/$@ $^
-	
+	# libtool --mode=link cc -static -o $(OUT_DIR)/$@ $^
+
 
 
 
