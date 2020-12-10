@@ -33,7 +33,6 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WMessageBox.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WText.h>
 
 #include <Wt/WAnchor.h>
 #include <Wt/Http/Request.h>
@@ -305,6 +304,8 @@ private:
 
   /// The file view.
   WTableView                             *fileView_;
+	
+	WTableView                             *progEditorView_;
 
 //   std::unique_ptr<FileEditDialog>         dialog_;
 
@@ -323,6 +324,10 @@ private:
 	std::unique_ptr<WPopupMenu>             editMenu_;
 	
 	std::unique_ptr<WPopupMenu>             helpMenu_;
+	
+	AkaiKeyGroupEditor 												*akEd;
+	
+	WContainerWidget 												*editorContainer;
 	
 	// current directory.
 	std::string curdir;
@@ -357,13 +362,15 @@ private:
     layout->addWidget(createFolderView(), 1, 0);
     layout->setColumnResizable(1);
 		// add file view
-    std::unique_ptr<WHBoxLayout> vbox = cpp14::make_unique<WHBoxLayout>();
+    auto vbox = cpp14::make_unique<WHBoxLayout>();
 
     auto fw = vbox->addWidget(fileView(),1);
-		fw->hide();
-		AkaiKeyGroupEditor *ed = new AkaiKeyGroupEditor();
-		
-		auto progwidget = vbox->addWidget(std::move(ed->loadProgramFile("lala","dada")),1);
+// 		fw->hide();
+		akEd = new AkaiKeyGroupEditor();
+// 		progEditorView_ = akEd->get();
+		editorContainer = vbox->addWidget(akEd->getEditWindow(),1);
+		editorContainer->hide();
+// 		auto progwidget = vbox->addWidget(akEd->getEditWindow(),1);
     vbox->setResizable(1);
     layout->addLayout(std::move(vbox), 1, 1);
 // 		progwidget->hide();
@@ -677,8 +684,38 @@ private:
   /*! \brief Edit a particular row. TODO: from the example. Can probably gO?
    */
   void editFile(const WModelIndex& item) {
+		cpp17::any d = item.data(ItemDataRole::User);
+		
+		if (!cpp17::any_has_value(d)) {
+				std::cout << "Error popup didnt receive data" << std::endl;
+				return;
+		}
+
+		std::string filePath = cpp17::any_cast<std::string>(d);
+		
+		if (cpp17::any_has_value(d)) {
+		
+		std::cout << "EDIT FILE1****************************" << filePath << std::endl;
+		akEd->loadProgramFile(filePath,AkHelpers::getFileName(filePath,true));
+		std::cout << "EDIT FILE2****************************" << AkHelpers::getFileName(filePath,true) << std::endl;
+		
+		
+		}
+		fileView_->hide();
+		std::cout << "EDIT FILE2****************************" << std::endl;
+		
+		editorContainer->show();
+		std::cout << "EDIT FILE3****************************" << std::endl;
+		
 		
   }
+  
+  void hideFileEditor() {
+		
+		fileView_->show();
+		editorContainer->hide();
+		
+	}
 
 
   /*! \brief Creates the hints text.
@@ -724,6 +761,9 @@ private:
   /*! \brief Change the internal akai folder when folder is changed on UI. Do we need that?
    */
   void folderChanged() {
+		//Close editor in case it's open
+		hideFileEditor();
+		
 		std::cout << "folder changed" << std::endl;	
     if (folderView_->selectedIndexes().empty())
       return;
