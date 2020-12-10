@@ -28,7 +28,8 @@ CFLAGS = -Wall -std=c++14 -fPIC -I./$(AKAIDIR)
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -static -lwt -lwthttp 
+# LIBS = -static -lwt -lwthttp
+LIBS = -lwt -lwthttp 
 
 # define the C source files
 SRCS = TreeViewDragDrop.c FolderView.c AkaiProgram.c

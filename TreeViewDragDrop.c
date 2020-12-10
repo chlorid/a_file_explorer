@@ -2077,7 +2077,7 @@ private:
 									continue; /* next volume */
 								}
 								else {
-									sprintf(partletter,"%s",tmpvol.name);
+// 									sprintf(partletter,"%s",tmpvol.name);
 									char volName[20];
 									sprintf(volName,"%s",tmpvol.name);
 									std::string volidx = partidx;
