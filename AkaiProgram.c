@@ -184,9 +184,14 @@ private:
 		}
 // 		filedata = &outbuf;	
 		std::cout << "Load file OK.  " << filePath << " | " << fileNamec << std::endl;
-		programHeader = (akai_program1000_s*) outbuf;
+// 		programHeader = (akai_program1000_s*) outbuf;
+		programHeader = (s1000ProgHeader_s*) outbuf;
 		keyGroupVelocityHeader = (akai_program1000kgvelzone_s*) outbuf+sizeof(akai_program1000_s);
-		keyGroupHeader = (akai_program1000kg_s*)keyGroupVelocityHeader + sizeof(akai_program1000kgvelzone_s);
+// 		keyGroupHeader = (s1000KgHeader_s*)keyGroupVelocityHeader + sizeof(akai_program1000kgvelzone_s);
+		char buf[20];
+		sprintf(buf,"%u",programHeader->first_keygroup_address[0]);
+		std::cout << "first_keygroup_address[0].  " << buf[0] << std::endl;
+		keyGroupHeader = (s1000KgHeader_s*) outbuf+programHeader->first_keygroup_address[0];
 		
 // 		char akaiName[15];
 // 		akai2ascii_name(programHeader->name,akaiName,0);
@@ -215,16 +220,57 @@ std::unique_ptr<WContainerWidget> AkaiKeyGroupEditor::getEditWindow() {
 		
 		auto modelHeader = std::make_shared<Wt::WStandardItemModel>();
 
-		modelHeader->appendRow(createItem("Block ID",programHeader->blockid));
-		modelHeader->appendRow(createItem("Name",programHeader->name));
-		modelHeader->appendRow(createItem("Midi chnnel number-1 or code",programHeader->midich1));
-		modelHeader->appendRow(createItem("Midi key Lo",programHeader->keylo));
-		modelHeader->appendRow(createItem("Midi key Hi",programHeader->keyhi));
-		modelHeader->appendRow(createItem("octave offset",programHeader->oct));
-		modelHeader->appendRow(createItem("Aux out channel number-1 or code",programHeader->auxch1));
-		modelHeader->appendRow(createItem("Key group crossfade enable",programHeader->kgxf));
-		modelHeader->appendRow(createItem("Number of key groups",programHeader->oct));
 		
+     modelHeader->appendRow(createItem("program_id            ",programHeader->program_id            ));  
+     modelHeader->appendRow(createItem("first_keygroup_address",programHeader->first_keygroup_address[0]));
+     modelHeader->appendRow(createItem("firstprogram_name     ",programHeader->firstprogram_name     ));
+     modelHeader->appendRow(createItem("midi_program_nUmber   ",programHeader->midi_program_nUmber   ));  
+     modelHeader->appendRow(createItem("midi_channel          ",programHeader->midi_channel          ));  
+     modelHeader->appendRow(createItem("polyphony             ",programHeader->polyphony             ));  
+     modelHeader->appendRow(createItem("priority              ",programHeader->priority              ));  
+     modelHeader->appendRow(createItem("low_key               ",programHeader->low_key               ));  
+     modelHeader->appendRow(createItem("high_key              ",programHeader->high_key              ));  
+     modelHeader->appendRow(createItem("octave_shift          ",programHeader->octave_shift          ));  
+     modelHeader->appendRow(createItem("aux_output_select     ",programHeader->aux_output_select     ));  
+     modelHeader->appendRow(createItem("mix_output_level      ",programHeader->mix_output_level      ));  
+     modelHeader->appendRow(createItem("mix_output_pan        ",programHeader->mix_output_pan        )); 
+     modelHeader->appendRow(createItem("volume                ",programHeader->volume                ));
+     modelHeader->appendRow(createItem("vel_volume            ",programHeader->vel_volume            )); 
+     modelHeader->appendRow(createItem("key_volume            ",programHeader->key_volume            ));  
+     modelHeader->appendRow(createItem("pres_volume           ",programHeader->pres_volume           ));  
+     modelHeader->appendRow(createItem("pan_lfo_rate          ",programHeader->pan_lfo_rate          ));  
+     modelHeader->appendRow(createItem("pan_lfo_depth         ",programHeader->pan_lfo_depth         ));  
+     modelHeader->appendRow(createItem("pan_lfo_delay         ",programHeader->pan_lfo_delay         ));  
+     modelHeader->appendRow(createItem("key_pan               ",programHeader->key_pan               ));  
+     modelHeader->appendRow(createItem("lfo_rate              ",programHeader->lfo_rate              ));  
+     modelHeader->appendRow(createItem("lfo_depth             ",programHeader->lfo_depth             ));  
+     modelHeader->appendRow(createItem("lfo_delay             ",programHeader->lfo_delay             ));  
+     modelHeader->appendRow(createItem("mod_lfo_depth         ",programHeader->mod_lfo_depth         ));  
+     modelHeader->appendRow(createItem("pres_lfo_depth        ",programHeader->pres_lfo_depth        ));  
+     modelHeader->appendRow(createItem("vel_lfo_depth         ",programHeader->vel_lfo_depth         ));  
+     modelHeader->appendRow(createItem("bend_pitch            ",programHeader->bend_pitch            ));  
+     modelHeader->appendRow(createItem("pres_pitch            ",programHeader->pres_pitch            ));  
+     modelHeader->appendRow(createItem("keygroup_crossfade    ",programHeader->keygroup_crossfade    ));  
+     modelHeader->appendRow(createItem("number_of_keygroups   ",programHeader->number_of_keygroups   ));  
+     modelHeader->appendRow(createItem("internal_use          ",programHeader->internal_use          ));  
+     modelHeader->appendRow(createItem("key_temperament       ",programHeader->key_temperament       ));  
+     modelHeader->appendRow(createItem("fx_output             ",programHeader->fx_output             ));  
+     modelHeader->appendRow(createItem("mod_pan               ",programHeader->mod_pan               ));  
+     modelHeader->appendRow(createItem("stereo_coherence      ",programHeader->stereo_coherence      ));  
+     modelHeader->appendRow(createItem("lfo_desync            ",programHeader->lfo_desync            ));  
+     modelHeader->appendRow(createItem("pitch_law             ",programHeader->pitch_law             ));  
+     modelHeader->appendRow(createItem("voice_reassign        ",programHeader->voice_reassign        ));  
+     modelHeader->appendRow(createItem("softped_volume        ",programHeader->softped_volume        ));  
+     modelHeader->appendRow(createItem("softped_attack        ",programHeader->softped_attack        ));  
+     modelHeader->appendRow(createItem("softped_filt          ",programHeader->softped_filt          ));  
+     modelHeader->appendRow(createItem("tune_cents            ",programHeader->tune_cents            ));  
+     modelHeader->appendRow(createItem("tune_semitones        ",programHeader->tune_semitones        ));  
+     modelHeader->appendRow(createItem("key_lfo_rate          ",programHeader->key_lfo_rate          ));  
+     modelHeader->appendRow(createItem("key_lfo_depth         ",programHeader->key_lfo_depth         ));  
+     modelHeader->appendRow(createItem("key_lfo delay         ",programHeader->key_lfo_delay         ));  
+     modelHeader->appendRow(createItem("voice_output_scale    ",programHeader->voice_output_scale    ));  
+     modelHeader->appendRow(createItem("stereo_output_scale   ",programHeader->stereo_output_scale   ));  
+
 		tableHeader->setModel(modelHeader);
 		tableHeader->setAlternatingRowColors(true);
 		tableHeader->setEditTriggers(Wt::EditTrigger::SingleClicked);
@@ -233,66 +279,129 @@ std::unique_ptr<WContainerWidget> AkaiKeyGroupEditor::getEditWindow() {
 		std::shared_ptr<ComboDelegate> customdelegate = std::make_shared<ComboDelegate>(slModel);
 		tableHeader->setItemDelegateForColumn(1,customdelegate);
 		
-		auto tableKgVel = cpp14::make_unique<WTableView>();
-		auto modelKgVel = std::make_shared<Wt::WStandardItemModel>();
 		
-		modelKgVel->appendRow(createItem("Sample name (in Ram?)",keyGroupVelocityHeader->sname));
-		modelKgVel->appendRow(createItem("Midi velocity Lo",keyGroupVelocityHeader->vello));
-		modelKgVel->appendRow(createItem("Midi velocity Hi",keyGroupVelocityHeader->velhi));
-		modelKgVel->appendRow(createItem("Cents tune offset",keyGroupVelocityHeader->ctune));
-		modelKgVel->appendRow(createItem("Semi tone tune",keyGroupVelocityHeader->stune));
-		modelKgVel->appendRow(createItem("Loudness offset",keyGroupVelocityHeader->loud));
-		modelKgVel->appendRow(createItem("Filter offset",keyGroupVelocityHeader->filter));
-		modelKgVel->appendRow(createItem("Pan offset",keyGroupVelocityHeader->pan));
+		lay->addWidget(std::move(tableHeader),1);
 		
-		tableKgVel->setModel(modelKgVel);
-		tableKgVel->setAlternatingRowColors(true);
-		tableKgVel->setEditTriggers(Wt::EditTrigger::SingleClicked);
-		auto slModel2 = std::make_shared<Wt::WStringListModel>();
-// 		slModel2->setStringList(options);    
-		std::shared_ptr<ComboDelegate> customdelegate2 = std::make_shared<ComboDelegate>(slModel2);
-		tableKgVel->setItemDelegateForColumn(1,customdelegate2);
+		for(unsigned int i=150;i<750;i=i+150) {
+			// works great, but we need  another way to show this. This fills the screen completely
+// 		for(unsigned int i=150;i<programFile.size;i=i+150) {
+			lay->addWidget(std::move(createKeyGroupTable(i/150)),1);	
+		}
 		
-		auto tableKgHeader = cpp14::make_unique<WTableView>();
-		auto modelKgHeader = std::make_shared<Wt::WStandardItemModel>();
-		
-		modelKgHeader->appendRow(createItem("Block ID",keyGroupHeader->blockid));
-		modelKgHeader->appendRow(createItem("pointer to next",keyGroupHeader->kgnexta));
-		modelKgHeader->appendRow(createItem("Midi key Lo",keyGroupHeader->keylo));
-		modelKgHeader->appendRow(createItem("Midi key Hi",keyGroupHeader->keyhi));
-		modelKgHeader->appendRow(createItem("Cents tune offset",keyGroupHeader->ctune));
-		modelKgHeader->appendRow(createItem("Semi tone tune",keyGroupHeader->stune));
-		modelKgHeader->appendRow(createItem("Filter",keyGroupHeader->filter));
-		modelKgHeader->appendRow(createItem("Velocity",keyGroupHeader->velxf));
-		
-		tableKgHeader->setModel(modelKgHeader);
-		tableKgHeader->setAlternatingRowColors(true);
-		tableKgHeader->setEditTriggers(Wt::EditTrigger::SingleClicked);
-		auto slModel3 = std::make_shared<Wt::WStringListModel>();
-// 		slModel2->setStringList(options);    
-		std::shared_ptr<ComboDelegate> customdelegate3 = std::make_shared<ComboDelegate>(slModel3);
-		tableKgHeader->setItemDelegateForColumn(1,customdelegate3);
 		
 		
 		
 
 		
 // 		return tableValues;
-		lay->addWidget(std::move(tableKgHeader),1);
-		lay->addWidget(std::move(tableHeader),1);
-		lay->addWidget(std::move(tableKgVel),1);
+		
+		
+		
+// 		lay->addWidget(std::move(tableKgVel),1);
 		
 // 		lay->addWidget(std::move(tableValues),1);
 		rootCnt_->setLayout(std::move(lay));
 		
 	}
 	
+	
+std::unique_ptr<WTableView> AkaiKeyGroupEditor::createKeyGroupTable(int keyGroupNumber) {
+	keyGroupHeader = (s1000KgHeader_s*) programHeader+keyGroupNumber;
+		
+	auto tableKgHeader = cpp14::make_unique<WTableView>();
+	auto modelKgHeader = std::make_shared<Wt::WStandardItemModel>();
+	
+	modelKgHeader->appendRow(createItem("keygroup_ID              ",keyGroupHeader->keygroup_ID           )); 
+	uint16_t *nextKgAddr = (uint16_t*) keyGroupHeader->next_keygroup_address;
+	std::cout << "nextKgAddr: " << nextKgAddr <<" *nextKgAddr: " << *nextKgAddr <<  std::endl;
+	modelKgHeader->appendRow(createItem("next_keygroup_address    ",std::to_string(*nextKgAddr)             ));
+	modelKgHeader->appendRow(createItem("low_key                  ",keyGroupHeader->low_key                 ));
+	modelKgHeader->appendRow(createItem("high_key                 ",keyGroupHeader->high_key                ));
+	modelKgHeader->appendRow(createItem("tune_cents               ",keyGroupHeader->tune_cents              ));
+	modelKgHeader->appendRow(createItem("tune_semitones           ",keyGroupHeader->tune_semitones          ));
+	modelKgHeader->appendRow(createItem("filter                   ",keyGroupHeader->filter                  ));
+	modelKgHeader->appendRow(createItem("key_filter               ",keyGroupHeader->key_filter              ));
+	modelKgHeader->appendRow(createItem("vel_filt                 ",keyGroupHeader->vel_filt                ));
+	modelKgHeader->appendRow(createItem("pres_filt                ",keyGroupHeader->pres_filt               ));
+	modelKgHeader->appendRow(createItem("env2_filt                ",keyGroupHeader->env2_filt               ));
+	modelKgHeader->appendRow(createItem("env1_attack              ",keyGroupHeader->env1_attack             ));
+	modelKgHeader->appendRow(createItem("env1_decay               ",keyGroupHeader->env1_decay              ));
+	modelKgHeader->appendRow(createItem("env1_sustain             ",keyGroupHeader->env1_sustain            ));
+	modelKgHeader->appendRow(createItem("env1_release             ",keyGroupHeader->env1_release            ));
+	modelKgHeader->appendRow(createItem("env1_vel_attack          ",keyGroupHeader->env1_vel_attack         ));
+	modelKgHeader->appendRow(createItem("env1_vel_release         ",keyGroupHeader->env1_vel_release        ));
+	modelKgHeader->appendRow(createItem("env1_offvel_release      ",keyGroupHeader->env1_offvel_release     ));
+	modelKgHeader->appendRow(createItem("env1_key_dec_rel         ",keyGroupHeader->env1_key_dec_rel        ));
+	modelKgHeader->appendRow(createItem("env2_attack              ",keyGroupHeader->env2_attack             ));
+	modelKgHeader->appendRow(createItem("env2_decay               ",keyGroupHeader->env2_decay              ));
+	modelKgHeader->appendRow(createItem("env2_sustain             ",keyGroupHeader->env2_sustain            ));
+	modelKgHeader->appendRow(createItem("env2_release             ",keyGroupHeader->env2_release            ));
+	modelKgHeader->appendRow(createItem("env2_vel_attack          ",keyGroupHeader->env2_vel_attack         ));
+	modelKgHeader->appendRow(createItem("env2_vel_release         ",keyGroupHeader->env2_vel_release        ));
+	modelKgHeader->appendRow(createItem("env2_offvel_release      ",keyGroupHeader->env2_offvel_release     ));
+	modelKgHeader->appendRow(createItem("env2_key_dec_rel         ",keyGroupHeader->env2_key_dec_rel        ));
+	modelKgHeader->appendRow(createItem("vel_env2_filter          ",keyGroupHeader->vel_env2_filter         ));
+	modelKgHeader->appendRow(createItem("env2_pitch               ",keyGroupHeader->env2_pitch              ));
+	modelKgHeader->appendRow(createItem("vel_zone_crossfade       ",keyGroupHeader->vel_zone_crossfade      ));
+	modelKgHeader->appendRow(createItem("vel_zones_used           ",keyGroupHeader->vel_zones_used          ));
+	modelKgHeader->appendRow(createItem("internal_use1            ",keyGroupHeader->internal_use1           ));
+	modelKgHeader->appendRow(createItem("internal_use2            ",keyGroupHeader->internal_use2           ));
+	modelKgHeader->appendRow(createItem("sample_1_name[12]        ",keyGroupHeader->sample_1_name       ));
+	modelKgHeader->appendRow(createItem("low_vel                  ",keyGroupHeader->low_vel                 ));
+	modelKgHeader->appendRow(createItem("high_vel                 ",keyGroupHeader->high_vel                ));
+	modelKgHeader->appendRow(createItem("tune_cents               ",keyGroupHeader->tune_cents2              ));
+	modelKgHeader->appendRow(createItem("tune_semitones           ",keyGroupHeader->tune_semitones2          ));
+	modelKgHeader->appendRow(createItem("loudness                 ",keyGroupHeader->loudness                ));
+	modelKgHeader->appendRow(createItem("filter                   ",keyGroupHeader->filter2                  ));
+	modelKgHeader->appendRow(createItem("pan                      ",keyGroupHeader->pan                     ));
+	modelKgHeader->appendRow(createItem("loop_mode                ",keyGroupHeader->loop_mode               ));
+	modelKgHeader->appendRow(createItem("internal_use3            ",keyGroupHeader->internal_use3           ));
+	modelKgHeader->appendRow(createItem("internal_use4            ",keyGroupHeader->internal_use4           ));
+	modelKgHeader->appendRow(createItem("internal_use5[2]         ",keyGroupHeader->internal_use5        ));
+	modelKgHeader->appendRow(createItem("repeat_35_58_for_sample_2",keyGroupHeader->repeat_35_58_for_sample_2));
+	modelKgHeader->appendRow(createItem("repeat_35_58_for_sample_3",keyGroupHeader->repeat_35_58_for_sample_3));
+	modelKgHeader->appendRow(createItem("repeat_35_58_for_sample_4",keyGroupHeader->repeat_35_58_for_sample_4));
+	modelKgHeader->appendRow(createItem("beat_detune             ;",keyGroupHeader->beat_detune             ));
+	modelKgHeader->appendRow(createItem("hold_attack_until_loop  ;",keyGroupHeader->hold_attack_until_loop  ));
+	modelKgHeader->appendRow(createItem("sample_1_4_key_tracking[4",keyGroupHeader->sample_1_4_key_tracking));
+	modelKgHeader->appendRow(createItem("sample_1_4_aux_out_offset",keyGroupHeader->sample_1_4_aux_out_offset));
+	modelKgHeader->appendRow(createItem("vel_sample_start[8];     ",keyGroupHeader->vel_sample_start    ));
+	modelKgHeader->appendRow(createItem("vel_volume_offset;       ",keyGroupHeader->vel_volume_offset      ));
+	modelKgHeader->appendRow(createItem("not_used;                ",keyGroupHeader->not_used));   //150     (no
+																															
+// 		modelKgHeader->appendRow(createItem("Block ID",keyGroupHeader->blockid));
+// 		modelKgHeader->appendRow(createItem("pointer to next",keyGroupHeader->kgnexta));
+// 		modelKgHeader->appendRow(createItem("Midi key Lo",keyGroupHeader->keylo));
+// 		modelKgHeader->appendRow(createItem("Midi key Hi",keyGroupHeader->keyhi));
+// 		modelKgHeader->appendRow(createItem("Cents tune offset",keyGroupHeader->ctune));
+// 		modelKgHeader->appendRow(createItem("Semi tone tune",keyGroupHeader->stune));
+// 		modelKgHeader->appendRow(createItem("Filter",keyGroupHeader->filter));
+// 		modelKgHeader->appendRow(createItem("Velocity",keyGroupHeader->velxf));
+	
+	tableKgHeader->setModel(modelKgHeader);
+	tableKgHeader->setAlternatingRowColors(true);
+	tableKgHeader->setEditTriggers(Wt::EditTrigger::SingleClicked);
+	auto slModel3 = std::make_shared<Wt::WStringListModel>();
+// 		slModel2->setStringList(options);    
+	std::shared_ptr<ComboDelegate> customdelegate3 = std::make_shared<ComboDelegate>(slModel3);
+	tableKgHeader->setItemDelegateForColumn(1,customdelegate3);
+	return std::move(tableKgHeader);
+}
+
+	
 
 // unsigned char but akai ascii. Needs conersion.
 std::vector< std::unique_ptr< WStandardItem >> AkaiKeyGroupEditor::createItem(std::string itemCaption, unsigned char itemValue) {
-	std::cout << "Create Item. Value uchar: ****************************" << std::to_string(akai2ascii(itemValue)) << std::endl;
-	return createItem(itemCaption,std::to_string(akai2ascii(itemValue)));
+	char buf[20];
+	sprintf(buf,"%u",itemValue);
+	std::cout << "Create Item. Value uchar: ****************************" << buf << std::endl;
+	return createItem(itemCaption,buf);
 }
+
+// std::vector< std::unique_ptr< WStandardItem >> AkaiKeyGroupEditor::createItem(std::string itemCaption, char itemValue) {
+// 	std::cout << "Create Item. Value char: ****************************" << std::to_string(itemValue) << std::endl;
+// 	return createItem(itemCaption,std::to_string(itemValue));
+// }
 
 
 // unsigned char* but akai ascii. Needs conersion.
