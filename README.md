@@ -27,23 +27,130 @@ Yet to come:
 Contributions are welcome.
 
 # Operating system
-The code I created has ben proven working on Ubuntu 18.04.Other operating systems might need modifications, but it should be possible as the libraries used are also compatible with windows and mac
+The code I created has ben proven working on Ubuntu 18.04. And a rather recent version of MacOsX as well as on Debian Buster (RaspberryPi). Other operating systems might need modifications, but it should be possible.
 
 # Installation
 
-To be able to compile and run the project, you need Wt, a c++ framework to create web based apps. Download it at www.webtoolkit.eu and follow the installation instructions provided.
+To be able to compile and run the project, you need Wt, a c++ framework to create web based apps.
 
-Download the project to a local directory and compile with "make all".
+For Linux:
+
+Download it at www.webtoolkit.eu and follow the installation instructions provided. For older Linux versions you might find Wt in the packet sources. The packet is named witty.
+Download the project a_file explorer to a local directory and compile with "make all".
+
+For MacOs (Thanks to δέλτα άλφα)
+
+1) Install Xcode (free download from the Apple App Store)
+
+2) Install Xcode Command-Line Tools
+   a. Run  
+
+			xcode-select –install on Terminal, or
+
+		b. If the above does’t work you can install them through Xcode
+
+        i. Start Xcode on the Mac.
+        ii. Choose Preferences from the Xcode menu.
+        iii. In the General panel, click Downloads.
+        iv. On the Downloads window, choose the Components tab.
+        v. Click the Install button next to Command Line Tools.
+
+3) Install Homebrew. On a Terminal window, run
+
+	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+4) Run the following lines one by one on Terminal to install wt framework.
+
+	brew install cmake
+
+	brew install boost
+
+	brew install fcgi
+
+[brew install openssl]
+
+[brew install mysql-connector-c]
+
+brew install libpng
+
+[brew install libtiff]
+
+[brew install libharu]
+
+brew install pango
+
+[brew install GraphicsMagick]
+
+*The lines in brackets [   ] Are not needed to compile a_file_explorer. If you dont want the packet for anything else, omit these lines.
+
+git clone git://github.com/kdeforche/wt.git
+
+cd wt
+
+mkdir build
+
+cd build
+
+cmake \
+-DCMAKE_CXX_FLAGS='-stdlib=libc++' \
+-DCMAKE_EXE_LINKER_FLAGS='-stdlib=libc++' \
+-DCMAKE_MODULE_LINKER_FLAGS='-stdlib=libc++' \
+-DWT_CPP_11_MODE='-std=c++11' \
+-DGM_PREFIX=/usr/local [-DMYSQL_LIBRARY=mysqlclient \]
+[-DMYSQL_PREFIX=/usr/local/Cellar/mysql-connector-c/6.1.6 \]
+[-DWT_WRASTERIMAGE_IMPLEMENTATION=GraphicsMagick \
+[-DSSL_PREFIX=/usr/local/Cellar/openssl/1.0.2h_1 ../]
+
+*The lines in brackets [   ] Are not needed to compile a_file_explorer. If you dont want the packet for anything else, omit these lines. If you decide
+ to compile the full package, make sure, you get the path to your openSSL,GraphicsMagic, etc installation right.
+
+make -j4 # set -jN to your number of CPU cores for a faster parallel build
+
+sudo make install
+
+    5) Run on Terminal to clone a_file_explorer
+
+git clone https://github.com/chlorid/a_file_explorer.git
+
+cd a_file_explorer
+
+make all APPLEPC=true
+
+
+References
+
+https://redmine.webtoolkit.eu/projects/wt/wiki/Installing_Wt_on_Mac_OS_X_Yosemite
+
+https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools
+
+https://www.embarcadero.com/starthere/xe5/mobdevsetup/ios/en/installing_the_commandline_tools.html
+
+
+# Running the Program
 
 Create a symbolic link from the resources folder that came with your Wt framework to your document root folder. For example ".", the directory where you binary is. It provides the web stuff to the project.
+
+You can achieve this in Linux and MacOs easily by changing to the a_file_manager folder (the folder where your compiled binary is) and entering:
+
+ln -s /path/to/wt/resources/  or ln -s /Users/yourusername/wt/resources
+
+create a folder named images in the a_file_explorer directory. All images in this folder are being opened on start
 
 execute the binary as follows:
 
 ./afe.wt --docroot . --http-address 0.0.0.0 --http-port 9091 --config wt_config.xml
 
-This starts a webserver providing the program for everyone in the network on all IP Adresses of the computer (0.0.0.0)on the given Port(9091).
+--http-address serves to the entire network. By choosing te localhost IP 127.0.0.1, you limit access to the local computer.
+--http-port is the port the program is serving the web gui to. you can also choose 80, if you dont serve other webpage from the PC the program is run on. Then you can omit the port 			when opening the user interface in the browser.
+--config The config file for WT. Settings regarding the web interface can be changed there.
+
+After executing the command, you should see a message saying the program is listening on Ip xxx and Por yyy.
+
 
 Now open a browser and enter http://hostname:port (on a local installation for example : http://localhost:9091).
+
+In order to stop the app press control+c on the Terminal window that you used to run it. If you closed that Terminal window and the program is still running,
+just open a new one and run the command: sudo killall afe.wt.
 
 # Disclaimer
 

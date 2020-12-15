@@ -5,6 +5,7 @@
 # 'make clean'  removes all .o and executable files
 #
 
+APPLEPC=FALSE
 # define the C compiler to use
 CC = g++
 
@@ -105,8 +106,13 @@ $(info akaiobjs: $(addprefix $(AKAIDIR)/,$(notdir $(patsubst %.c,%.o,$(wildcard 
 
 # Enumerating of every *.c as *.o and using that as dependency
 $(AKAI): $(addprefix $(AKAIDIR)/,$(notdir $(patsubst %.c,%.o,$(wildcard $(AKAIDIR)/*.c))))
-	ar -r -o $(OUT_DIR)/$@ $^
-	# libtool --mode=link cc -static -o $(OUT_DIR)/$@ $^
+ifeq ($(APPLEPC),true)
+		libtool --mode=link cc -static -o $(OUT_DIR)/$@ $^
+else
+		ar -r -o $(OUT_DIR)/$@ $^
+endif
+	
+	# 
 
 
 

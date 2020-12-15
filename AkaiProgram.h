@@ -32,7 +32,7 @@ struct s1000ProgHeader_s {                    //--------------------------------
 	unsigned char priority;                   // 15          1..16                        /*18   */
 	unsigned char low_key;                    // 1           0=LOW 1=NORM 2=HIGH 3=HOLD   /*19   */
 	unsigned char high_key;                   // 24          24..127                      /*20   */
-	char octave_shift;               // 127         24..127                      /*21   */
+	char octave_shift;                        // 127         24..127                      /*21   */
 	unsigned char aux_output_select;          // 0           -2..2                        /*22   */
 	unsigned char mix_output_level;           // 255         0..7, 255=OFF                /*23   */
 	unsigned char mix_output_pan;             // 99          0..99                        /*24   */
@@ -152,10 +152,12 @@ private:
 	struct akai_program1000kgvelzone_s *keyGroupVelocityHeader;
 // 	struct akai_program1000kg_s *keyGroupHeader;
 	struct s1000KgHeader_s *keyGroupHeader;             
-	std::vector< std::unique_ptr< WStandardItem >> createItem(std::string itemCaption, std::string itemValue);
-	std::vector< std::unique_ptr< WStandardItem >> createItem(std::string itemCaption, unsigned char *itemValue);
-	std::vector< std::unique_ptr< WStandardItem >> createItem(std::string itemCaption, unsigned char itemValue);
-	std::unique_ptr<WTableView> createKeyGroupTable(int keyGroupNumber);
+	std::unique_ptr< WStandardItem > createItem(std::string itemCaption, std::string itemValue);
+	std::unique_ptr< WStandardItem > createItem(std::string itemCaption, unsigned char *itemValue);
+	std::unique_ptr< WStandardItem > createItem(std::string itemCaption, unsigned char itemValue);
+// 	std::unique_ptr<WTableView> createKeyGroupTable(int keyGroupNumber);
+	std::unique_ptr<WTableView> createKeyGroupTable();
+	void createKeyGroupTableEntry(std::shared_ptr<Wt::WStandardItemModel> modelKgHeader, int keyGroupNumber);
 // 	std::vector< std::unique_ptr< WStandardItem >> createItem(std::string itemCaption, char itemValue);
 	
 	
