@@ -1,13 +1,15 @@
 # a(kai)_file_explorer
 This is a web gui based tool to handle Akai S900/950, S1000,S1100/S3000 file System containers as well as harddisks formatted with one of the machines.
 
-The program pretty much gives akaiutil by Klaus Michael Indlekofer. (Available here: https://sourceforge.net/projects/akaiutil/) a web based GUI.
+The program pretty much gives akaiutil by Klaus Michael Indlekofer (Available here: https://sourceforge.net/projects/akaiutil/) a web based GUI.
 I distribute a slightly modified version of the program to create a library from it. The Program is published under the GNU 2.0 public license.
+The program is still under heavy development, so let me know if you miss a feture or find a bug.
 
-Things, that already work:
--create disk container
+Things, that work:
+-browse through images,partitions, volumes and files
+-create disk container 
 -format disk container 
--Create Partitions (needs some work)
+-Create Partitions 
 -Wipe Partitions
 -Copy Partitions
 -Create Volumes
@@ -15,8 +17,10 @@ Things, that already work:
 -Copy Volumes
 -Wipe Volumes
 -Copy files
--delete files
-all above functionalities apply to S1000/S3000 file system. Anyway there is not mucch modification needed to enable more formats.
+-Delete files
+-Play a sample on double click
+-Browse S1000 Programs/ Keygroup settings (TODO: editing)
+all above functionalities apply to S1000/S3000 file system. Anyway there is not mucch modification needed to enable more formats. Let me know what you are missing.
 
 Yet to come:
 -Ability to mount/unount disk containers provided by rascsi (https://github.com/akuker/RASCSI/)
@@ -27,7 +31,7 @@ Yet to come:
 Contributions are welcome.
 
 # Operating system
-The code I created has ben proven working on Ubuntu 18.04. And a rather recent version of MacOsX as well as on Debian Buster (RaspberryPi). Other operating systems might need modifications, but it should be possible.
+The code I created has been proven working on Ubuntu 18.04. and a rather recent version of MacOsX as well as on Debian Buster (RaspberryPi). Other operating systems might need modifications, but it should be possible.
 
 # Installation
 
@@ -38,7 +42,7 @@ For Linux:
 Download it at www.webtoolkit.eu and follow the installation instructions provided. For older Linux versions you might find Wt in the packet sources. The packet is named witty.
 Download the project a_file explorer to a local directory and compile with "make all".
 
-For MacOs (Thanks to δέλτα άλφα)
+Complete instructions for MacOs (Thanks to δέλτα άλφα)
 
 1) Install Xcode (free download from the Apple App Store)
 
@@ -130,7 +134,7 @@ https://www.embarcadero.com/starthere/xe5/mobdevsetup/ios/en/installing_the_comm
 
 Create a symbolic link from the resources folder that came with your Wt framework to your document root folder. For example ".", the directory where you binary is. It provides the web stuff to the project.
 
-You can achieve this in Linux and MacOs easily by changing to the a_file_manager folder (the folder where your compiled binary is) and entering:
+You can achieve this in Linux and MacOs easily by changing in a Konsole window to the a_file_manager folder (the folder where your a_file_explorer.wt binary is) and entering:
 
 ln -s /path/to/wt/resources/  or ln -s /Users/yourusername/wt/resources
 

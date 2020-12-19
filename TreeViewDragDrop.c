@@ -800,7 +800,7 @@ private:
 			else if (endsWith(filePath,".P3")){
 				return;// "sorry, not implemented yet.";				
 			}
-			else if (endsWith(filePath,".S1")){
+			else if (endsWith(filePath,".S1")||endsWith(filePath,".S3")){
 				auto res = std::make_shared<AkaiFileResource>(filePath);		
 				std::string tmpFilePath = res->saveLocally();
 				std::cout << "exported " << filePath << " to " << tmpFilePath << std::endl;
@@ -2104,9 +2104,22 @@ private:
 				items.push_back(std::move(fileitem));	
 				
 				items.push_back(std::move(createFileFolderItem(ftype,filepath)));
-				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.bstart),filepath)));		
-				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.size),filepath)));
-// 				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.type),filepath)));
+				items.push_back(std::move(createFileFolderItem(std::to_string(tmpfile.bstart),filepath)));
+				float fileSizeNum = tmpfile.size/1000.00;
+				std::string fileSizeStr;
+				if (fileSizeNum > 1) {
+					fileSizeStr = std::to_string(fileSizeNum);
+					fileSizeStr.erase ( fileSizeStr.find_last_not_of('0') + 1, std::string::npos );
+					fileSizeStr.append(" kb");
+				}
+				else {
+					fileSizeStr = std::to_string(tmpfile.size);
+					fileSizeStr.append(" b");
+				}
+// 				std::string fileSize = std::to_string(tmpfile.size/1000.00);
+				
+				items.push_back(std::move(createFileFolderItem(fileSizeStr,filepath)));
+// 				items.push_back(std::move(createFileFolderItem(std::to_string(sizeof(tmpfile)),filepath)));
 				char ostag[4];
 				sprintf(ostag,"%u",*tmpfile.tag);
 				items.push_back(std::move(createFileFolderItem(ostag,filepath)));
@@ -2115,8 +2128,8 @@ private:
 				fileModel->setHeaderData(0, Orientation::Horizontal, cpp17::any(std::string("File Name")));
 				fileModel->setHeaderData(1, Orientation::Horizontal, cpp17::any(std::string("Type")));
 				fileModel->setHeaderData(2, Orientation::Horizontal, cpp17::any(std::string("startbyte")));
-				fileModel->setHeaderData(3, Orientation::Horizontal, cpp17::any(std::string("size [b]")));
-// 				fileModel->setHeaderData(4, Orientation::Horizontal, cpp17::any(std::string("type")));
+				fileModel->setHeaderData(3, Orientation::Horizontal, cpp17::any(std::string("size")));
+// 				fileModel->setHeaderData(4, Orientation::Horizontal, cpp17::any(std::string("size2")));
 				fileModel->setHeaderData(4, Orientation::Horizontal, cpp17::any(std::string("osver")));
 // 				fileModel->setHeaderData(6, Orientation::Horizontal, cpp17::any(std::string("header reserved")));
 			}			
