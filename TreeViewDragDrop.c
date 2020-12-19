@@ -4,6 +4,7 @@
  * See the LICENSE file for terms of use.
  */
 #include <fstream>
+#include <iostream>
 // #include <boost/filesystem>
 
 #include <Wt/WApplication.h>
@@ -42,6 +43,7 @@
 #include <Wt/WLink.h>
 #include <Wt/WFileUpload.h>
 #include <Wt/WProgressBar.h>
+#include <Wt/WSound.h>
 
 // #include <Wt/Chart/WPieChart.h>
 
@@ -82,6 +84,14 @@ public:
 		}
 
 		return("");
+	}
+	
+	static std::string& replace(std::string& s, const std::string& from, const std::string& to)
+	{
+    if(!from.empty())
+        for(size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
+            s.replace(pos, from.size(), to);
+    return s;
 	}
 };
 
@@ -173,6 +183,95 @@ public:
 				}
 			}
     }
+    
+    std::string saveLocally(std::string filePathOverride = std::string()) {
+			struct file_s tmpfile;
+			std::ofstream tempFile;
+			char fileNamec[40];
+			char filePathc[256];
+			sprintf(fileNamec,"%s",AkHelpers::getFileName(filePath).c_str());
+			sprintf(filePathc,"%s",filePath.c_str());
+			std::string savePath = "./tmp/"+fileName+".wav";
+			
+			if (!filePathOverride.empty()) savePath = filePathOverride;
+			
+			
+			
+			if (change_curdir(filePathc,0,fileNamec,0)<0){
+				std::cout << "Error. Dir not found:  " <<filePath << " | " << fileNamec << std::endl;
+				return "";
+			}
+			if (akai_find_file(curvolp,&tmpfile,fileNamec)<0){
+				std::cout << "Error. File not found:  " <<filePath << " | " << fileNamec << std::endl;
+				return "";
+			}
+// // 			std::cout << "file t<pe: " << tmpfile.type << std::endl;
+// 				if (tmpfile.type == 115){
+// 					fileitem->setIcon("icons/note.gif");
+// 					ftype = "S1000 Sample";
+// 				}
+// 				else if (tmpfile.type == 112){
+					
+			if(tmpfile.type == 243 || tmpfile.type == 115) {
+// 				std::cout << "S3000 Sample: " << tmpfile.type << std::endl;
+				if (akai_sample2wav(&tmpfile,-1,NULL,NULL,SAMPLE2WAV_ALL)<0){
+							PRINTF_ERR("export error\n");
+				}
+// 				std::replace(savePath," ","_");
+// 				if(std::rename(fileNamew.c_str(),AkHelpers::replace(savePath," ","_").c_str()) < 0) {
+// 				savePath =AkHelpers::replace(savePath," ","_");
+				if(std::rename(fileNamew.c_str(),savePath.c_str()) < 0) {
+					std::cout << "Could not move file from " << fileNamew << " to " << savePath << ". Errno: " << std::to_string(errno) << std::endl;  
+				}
+				
+// 				std::cout << "sample2wav filenamec:  " << fileNamec << std::endl;
+// 				
+// 				std::cout << "sample2wav filenamew :  " << fileNamew << std::endl;
+// 				std::ifstream input( fileNamew );
+// 				tempFile.open (savePath);
+// 				tempFile << input.rdbuf();
+// 				tempFile.close();
+// 				input.close();
+			}
+			// S1000/S3000 Programs
+ 			else if(tmpfile.type == 240 || tmpfile.type == 112) {
+				if(tmpfile.type == 240 ) suggestFileName(fileName + ".P3");
+				else 										 suggestFileName(fileName + ".P1");
+				// 				std::cout << "S3000 program: " << tmpfile.type << std::endl;
+
+				unsigned char outbuf[tmpfile.size+1];
+				if (akai_read_file(0, outbuf,&tmpfile,0,tmpfile.size)<0){
+						std::cout << "Error. Could not read file!:  " << filePath << " | " << fileNamec << std::endl;
+				}
+				// write data to stream.
+				for (unsigned int i=0;i<tmpfile.size;i++) {
+					tempFile.open (savePath);
+					tempFile << outbuf[i];
+					tempFile.close();
+// 					input.close();
+				}
+			}
+			else {
+				std::cout << "unknown file: " << tmpfile.type << std::endl;
+				suggestFileName(fileName + ".unknown");
+				unsigned char outbuf[tmpfile.size+1];
+				if (akai_read_file(0, outbuf,&tmpfile,0,tmpfile.size)<0){
+						std::cout << "Error. Could not read file!:  " << filePath << " | " << fileNamec << std::endl;
+				}
+				// write data to stream.
+				for (unsigned int i=0;i<tmpfile.size;i++) {
+					tempFile.open (savePath);
+					tempFile << outbuf[i];
+					tempFile.close();
+// 					input.close();
+					
+				}
+			}
+		return savePath;	
+    }
+		
+			
+// 		}
 };
 
 // class AkaiSampleFileResource : public AkaiFileResource {
@@ -681,7 +780,7 @@ private:
     return tableView;
   }
 
-  /*! \brief Edit a particular row. TODO: from the example. Can probably gO?
+  /*! \brief 
    */
   void editFile(const WModelIndex& item) {
 		cpp17::any d = item.data(ItemDataRole::User);
@@ -695,9 +794,28 @@ private:
 		
 		if (cpp17::any_has_value(d)) {
 		
-		std::cout << "EDIT FILE1****************************" << filePath << std::endl;
-		akEd->loadProgramFile(filePath,AkHelpers::getFileName(filePath,true));
-		std::cout << "EDIT FILE2****************************" << AkHelpers::getFileName(filePath,true) << std::endl;
+			if (endsWith(filePath,".P1")){
+				akEd->loadProgramFile(filePath,AkHelpers::getFileName(filePath,true));
+			}
+			else if (endsWith(filePath,".P3")){
+				return;// "sorry, not implemented yet.";				
+			}
+			else if (endsWith(filePath,".S1")){
+				auto res = std::make_shared<AkaiFileResource>(filePath);		
+				std::string tmpFilePath = res->saveLocally();
+				std::cout << "exported " << filePath << " to " << tmpFilePath << std::endl;
+				
+				auto sound = root()->addChild(Wt::cpp14::make_unique<Wt::WSound>(tmpFilePath));
+				sound->play();
+// 				root()->removeWidget(sound);
+				return;// "sorry, not implemented yet.";				
+			}
+			else {
+				std::cout << "unknown file type" << std::endl;
+			}
+			
+// 		std::cout << "EDIT FILE1****************************" << filePath << std::endl;
+// 		std::cout << "EDIT FILE2****************************" << AkHelpers::getFileName(filePath,true) << std::endl;
 		
 		
 		}
