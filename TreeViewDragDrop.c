@@ -69,6 +69,7 @@ class AkHelpers {
 public:
 	
 	static std::string getFileName(const std::string& s, bool raw = false) {
+		std::cout << "get filename input: " << s << " raw: " << raw << std::endl;
 		char sep = '/';
 		#ifdef _WIN32
 		sep = '\\';
@@ -77,9 +78,13 @@ public:
 		if (i != std::string::npos) 
 		{
 		std::string filename = s.substr(i+1, s.length() - i);
-		if (raw == true) return filename;
+		if (raw == true) {
+			std::cout << "get filename filename: " << filename << std::endl;
+			return filename;
+		}
 		size_t lastindex = filename.find_last_of("."); 
 		std::string rawname = filename.substr(0, lastindex); 
+		std::cout << "get filename rawname: " << rawname << std::endl;
 		return(rawname);
 		}
 
@@ -93,6 +98,12 @@ public:
             s.replace(pos, from.size(), to);
     return s;
 	}
+	//from https://stackoverflow.com/questions/5891610/how-to-remove-certain-characters-from-a-string-in-c
+	static void removeCharsFromString( std::string &str, char* charsToRemove ) {
+   for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
+      str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
+   }
+}
 };
 
 class AkaiFileResource : public Wt::WResource
@@ -192,6 +203,7 @@ public:
 			sprintf(fileNamec,"%s",AkHelpers::getFileName(filePath).c_str());
 			sprintf(filePathc,"%s",filePath.c_str());
 			std::string savePath = "./tmp/"+fileName+".wav";
+// 			std::string savePath = "./tmp/tmp.wav";
 			
 			if (!filePathOverride.empty()) savePath = filePathOverride;
 			
@@ -220,8 +232,9 @@ public:
 // 				std::replace(savePath," ","_");
 // 				if(std::rename(fileNamew.c_str(),AkHelpers::replace(savePath," ","_").c_str()) < 0) {
 // 				savePath =AkHelpers::replace(savePath," ","_");
-				if(std::rename(fileNamew.c_str(),savePath.c_str()) < 0) {
-					std::cout << "Could not move file from " << fileNamew << " to " << savePath << ". Errno: " << std::to_string(errno) << std::endl;  
+				AkHelpers::removeCharsFromString(savePath,"#");
+				if(std::rename(std::string(fileName+".wav").c_str(),savePath.c_str()) < 0) {
+					std::cout << "Could not move file from " << std::string(fileName+".wav").c_str() << " to " << savePath << ". Errno: " << std::to_string(errno) << std::endl;  
 				}
 				
 // 				std::cout << "sample2wav filenamec:  " << fileNamec << std::endl;
@@ -804,7 +817,7 @@ private:
 				auto res = std::make_shared<AkaiFileResource>(filePath);		
 				std::string tmpFilePath = res->saveLocally();
 				std::cout << "exported " << filePath << " to " << tmpFilePath << std::endl;
-				
+// 				std::cout << "fp: " << fp << "tempFilePath: " << tmpFilePath << std::endl;
 				auto sound = root()->addChild(Wt::cpp14::make_unique<Wt::WSound>(tmpFilePath));
 				sound->play();
 // 				root()->removeWidget(sound);
