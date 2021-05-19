@@ -51,6 +51,8 @@
 #include "FolderView.h"
 #include "AkaiProgram.h"
 
+#include <dlfcn.h>
+
 //akai
 // This Extern C should actually be enough. I still had to wrap the C header in another extern C. Why is that? Any solution for that?
 extern "C" {
@@ -60,6 +62,9 @@ extern "C" {
 // #include "akaiutil/akaiutil_tar.h"
 #include "akaiutil/akaiutil_file.h"
 // #include "akaiutil/akaiutil_take.h"
+
+//HXC
+#include "hxc/libhxcfe.h"
 }
 
 using namespace Wt;
@@ -67,7 +72,21 @@ using namespace Wt;
 class AkHelpers {
 	
 public:
+	//thx https://stackoverflow.com/questions/313970/how-to-convert-an-instance-of-stdstring-to-lower-case
+	static std::string toLowerCase(std::string data) {
+			std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c){ return std::tolower(c); });
+			return data;
+	}
 	
+	static std::string getFileExtension( std::string filename) {
+		std::string::size_type idx;
+		idx = filename.rfind('.');
+		if(idx != std::string::npos) {
+			return filename.substr(idx+1);
+		}
+		return std::string();
+	}
+		
 	static std::string getFileName(const std::string& s, bool raw = false) {
 		std::cout << "get filename input: " << s << " raw: " << raw << std::endl;
 		char sep = '/';
@@ -103,7 +122,134 @@ public:
    for ( unsigned int i = 0; i < strlen(charsToRemove); ++i ) {
       str.erase( remove(str.begin(), str.end(), charsToRemove[i]), str.end() );
    }
+	}
+
+};
+
+class HXChelpers {
+	
+public:
+
+// copied from hxcfe command line tool
+// TODO: Does not work. As soon as shared lib is loaded, app crashes.
+static int convertHFEtoRAW(std::string inFileName, std::string outFileName) {
+	// Load HXC lib_handle
+	void* handle = dlopen("./hxc/libhxcfe.so", RTLD_LAZY);
+		if (!handle) {
+// 			std::cout << "Cannot open library: " << dlerror() << '\n';
+			std::cout << "libhxcfe is not present or not properly installed." << '\n';
+			return -1;
+// 							return 1;
+		}
+					
+		// load needed symbols
+		std::cout << "Loading symbols ...\n";
+		// init function			
+		typedef HXCFE* 					(*HXCFE_INIT)										();
+		typedef HXCFE_IMGLDR*		(*HXCFE_IMGINITLOADER)					(HXCFE*);
+		typedef int32_t					(*HXCFE_IMGAUOTOSETECTLOADER)		(HXCFE_IMGLDR*, char*, int32_t );
+		typedef HXCFE_FLOPPY*		(*HXCFE_IMGLOAD)								(HXCFE_IMGLDR *, char*, int32_t, int32_t*);
+		typedef int32_t 				(*HXCFE_FLOPPYGETINTERFACEMODE)	(HXCFE*, HXCFE_FLOPPY*);
+		typedef int32_t 				(*HXCFE_IMGGETLOADERID)					(HXCFE_IMGLDR *, char*);
+		typedef int32_t 				(*HXCFE_FLOPPYSETINTERFACEMODE)	(HXCFE*, HXCFE_FLOPPY*, int32_t);	
+		typedef int32_t 				(*HXCFE_IMGEXPORT)							(HXCFE_IMGLDR*, HXCFE_FLOPPY*, char*, int32_t);
+		typedef int32_t 				(*HXCFE_IMGUNLOAD)							(HXCFE_IMGLDR*, HXCFE_FLOPPY*);
+		typedef void 						(*HXCFE_HXCFE_DEINITLOADER)			(HXCFE_IMGLDR*);
+// 		typedef char*						(*HXCFE_IMGGETLOADEREXT)				(HXCFE_IMGLDR*, int32_t);
+// 	const char*            hxcfe_imgGetLoaderExt( HXCFE_IMGLDR * imgldr_ctx, int32_t moduleID );
+
+
+
+
+		
+		// reset errors
+		dlerror();
+		HXCFE_INIT										hxcfe_init_dyn 								= (HXCFE_INIT) 											dlsym(handle, "hxcfe_init");
+		HXCFE_IMGINITLOADER  					hxcfe_imgInitLoader_dyn 			=	(HXCFE_IMGINITLOADER) 						dlsym(handle, "hxcfe_imgInitLoader");
+		HXCFE_IMGAUOTOSETECTLOADER 		hxcfe_imgAutoSetectLoader_dyn = (HXCFE_IMGAUOTOSETECTLOADER) 			dlsym(handle, "hxcfe_imgAutoSetectLoader");
+		HXCFE_IMGLOAD									hxcfe_imgLoad									= (HXCFE_IMGLOAD)										dlsym(handle, "hxcfe_imgLoad");
+		HXCFE_FLOPPYGETINTERFACEMODE	hxcfe_floppyGetInterfaceMode	= (HXCFE_FLOPPYGETINTERFACEMODE)		dlsym(handle, "hxcfe_floppyGetInterfaceMode");
+		HXCFE_IMGGETLOADERID					hxcfe_imgGetLoaderID					= (HXCFE_IMGGETLOADERID)						dlsym(handle, "hxcfe_imgGetLoaderID");
+		HXCFE_FLOPPYSETINTERFACEMODE	hxcfe_floppySetInterfaceMode	= (HXCFE_FLOPPYSETINTERFACEMODE)		dlsym(handle, "hxcfe_floppySetInterfaceMode");
+		HXCFE_IMGEXPORT								hxcfe_imgExport								= (HXCFE_IMGEXPORT)									dlsym(handle, "hxcfe_imgExport");
+		HXCFE_IMGUNLOAD								hxcfe_imgUnload								= (HXCFE_IMGUNLOAD)									dlsym(handle, "hxcfe_imgUnload");
+		HXCFE_HXCFE_DEINITLOADER			hxcfe_imgDeInitLoader					= (HXCFE_HXCFE_DEINITLOADER)				dlsym(handle, "hxcfe_imgDeInitLoader");
+// 		HXCFE_IMGGETLOADEREXT					hxcfe_imgGetLoaderExt					= (HXCFE_IMGGETLOADEREXT)						dlsym(handle, "hxcfe_imgGetLoaderExt");
+			
+		const char *dlsym_error = dlerror();
+			if (dlsym_error) {
+				std::cout << "libhxcfe fuction loading error. Maybe the wring lib version?." << dlsym_error << '\n';
+				dlclose(handle);
+				return -2;
+			}
+	// the loader gives the option to load other diskette formats Last argument is interfacemode (which was -1, probably for no gotek?). Just copied from the hxc commandline tool. Dont know what it does.
+	//for raw image export the loader is "RAW_LOADER"
+	int loaderid;
+	int32_t ret;
+	int32_t ifmode = -1;
+	
+	HXCFE_FLOPPY * floppydisk;
+	HXCFE *hxcfe = hxcfe_init_dyn();
+  HXCFE_IMGLDR * imgldr_ctx;
+
+	imgldr_ctx = hxcfe_imgInitLoader_dyn(hxcfe);
+ 	if(imgldr_ctx) {
+		char outformat[32];
+		char infile[255];
+		char outfile[255];
+		sprintf(outformat,"%s","RAW_LOADER");
+		sprintf(infile,"%s",inFileName.c_str());
+		sprintf(outfile,"%s",outFileName.c_str());
+ 		
+		loaderid = hxcfe_imgAutoSetectLoader_dyn(imgldr_ctx,infile,0);
+		std::cout << "infile: " << infile << "\noutfile: " << outfile << "\nloaderID: " << loaderid <<std::endl;
+		if(loaderid>=0) {
+			floppydisk = hxcfe_imgLoad(imgldr_ctx,infile,loaderid,&ret);
+
+			if(ret!=HXCFE_NOERROR || !floppydisk) {
+				switch(ret) {
+					case HXCFE_UNSUPPORTEDFILE:
+						std::cout <<"Load error!: Image file not yet supported!" << std::endl;
+					break;
+					case HXCFE_FILECORRUPTED:
+						std::cout <<"Load error!: File corrupted ? Read error ?" << std::endl;
+					break;
+					case HXCFE_ACCESSERROR:
+						std::cout <<"Load error!:  Read file error!" << std::endl;
+					break;
+					default:
+						std::cout <<"Load error! error " << ret << std::endl;
+					break;
+				}
+				return -1;
+			}
+			else {
+				if(ifmode<0) {
+				ifmode=hxcfe_floppyGetInterfaceMode(hxcfe,floppydisk);
+			}
+
+				loaderid = hxcfe_imgGetLoaderID(imgldr_ctx,outformat);
+				if(loaderid>=0)
+				{
+					int res = hxcfe_floppySetInterfaceMode(hxcfe,floppydisk,ifmode);
+					int res2 = hxcfe_imgExport(imgldr_ctx,floppydisk,outfile,loaderid);
+// 					std::cout << "stinterfacemode: " << res << "\nimgexport " << res2  <<std::endl;
+				}
+				else
+				{
+					printf("Cannot Find the Loader %s ! Please refer to hxc modulelist to see possible values.\n",outformat);
+				}
+
+				hxcfe_imgUnload(imgldr_ctx,floppydisk);
+			}
+		}
+
+		hxcfe_imgDeInitLoader(imgldr_ctx);
 }
+
+	return 0;
+}
+
 };
 
 class AkaiFileResource : public Wt::WResource
@@ -662,35 +808,70 @@ private:
 
 		WDialog dialog("Import Disk");
 		dialog.contents()->addWidget(cpp14::make_unique<WText>("Choose one or more disk images to import\n"));
-		Wt::WFileUpload *upload = dialog.contents()->addWidget(std::make_unique<Wt::WFileUpload>());		
+		Wt::WFileUpload *upload = dialog.contents()->addWidget(std::make_unique<Wt::WFileUpload>());
+		Wt::WPushButton *btnCancel = dialog.contents()->addWidget(std::make_unique<Wt::WPushButton>("cancel"));
+		btnCancel->clicked().connect(&dialog, &Wt::WDialog::reject);
+		actionResult="nopopup";
+// 		btnCancel->changed().connect([=] {
+// 			std::cout << "upload rejected" << std::endl;
+// 			dialog.reject();
+//       return "nopopup";
+// 		});
+		
 		upload->setProgressBar(Wt::cpp14::make_unique<Wt::WProgressBar>());
 		upload->setMultiple(true);
+// 		upload->changed().connect(&dialog, &Wt::WDialog::accept);
 		upload->changed().connect([=] {
       upload->upload();
-			upload->hide();
+			//upload->hide();
 			std::cout << "Start file upload..." << std::endl;
-      return "nopopup";
+      //return "nopopup";
 		});
 
 		// React to a succesfull upload.
 		upload->uploaded().connect(&dialog, &Wt::WDialog::accept);
-
+// 		upload->uploaded().connect([=] {
+// 			std::cout << "upload finished" << std::endl;
+// 			//actionResult = "upload finished";
+// 			//upload->hide();
+// 		});
+		
+		
 		// React to a file upload problem.
-		upload->fileTooLarge().connect(&dialog, &Wt::WDialog::accept);
+		upload->fileTooLarge().connect(&dialog, &Wt::WDialog::reject);
 
 		if (dialog.exec() == DialogCode::Accepted) {
+			upload->hide();
+			actionResult="";
 			std::vector<Wt::Http::UploadedFile> files =  upload->uploadedFiles();
+			std::cout << "#############################################hfe? " << upload->uploadedFiles().size() << std::endl;	
 			for (std::vector<Wt::Http::UploadedFile>::const_iterator i = files.begin(); i != files.end(); ++i) {
 				Wt::Http::UploadedFile lala = *i;
 				i->stealSpoolFile();
 				
-				std::string newpath = "./images/" + i->clientFileName();
+				std::string newpath = "./images/" + i->clientFileName() + ".akai";
 				std::cout << "File upload is finished.Spool file:" <<  i->spoolFileName() << std::endl;
+				// Check, if it is another format by file name. For now HFE /hfe 
+ 				std::cout << "hfe? " << i->clientFileName() << std::endl;	
+				if (AkHelpers::toLowerCase(AkHelpers::getFileExtension(i->clientFileName())) == "hfe" ) {
+					// Convert HFE with libhxcfe library.
+					std::cout << "********************************************************hfe file" << std::endl;
+					
+						if (HXChelpers::convertHFEtoRAW(i->spoolFileName(),newpath) >=0) {
+							actionResult += "File " + newpath + " successfully uploaded and conversion...";
+						}
+						else {
+							actionResult += "HFE image could not be converted. Import aborted.\n Did you install the hxcfe library?";
+							return actionResult;
+						}
+				}
+				else {
 				// move file to image folder.
-				actionResult += "File " + newpath + " successfully uploaded.Copy to image folder... ";
-				if(std::rename(i->spoolFileName().c_str(), newpath.c_str()) < 0) {
-					actionResult += "Could not move spool file to " + newpath + ". Errno: " + std::to_string(errno);  
+					actionResult += "File " + newpath + " successfully uploaded.\nCopy to image folder... ";
+					if(std::rename(i->spoolFileName().c_str(), newpath.c_str()) < 0) {
+						actionResult += "Could not move spool file to " + newpath + ". Errno: " + std::to_string(errno);  
 // 					return "error " + errno;
+					}
 				}
 				actionResult+="OK<br>\n";
 			}
@@ -821,7 +1002,7 @@ private:
 				auto sound = root()->addChild(Wt::cpp14::make_unique<Wt::WSound>(tmpFilePath));
 				sound->play();
 // 				root()->removeWidget(sound);
-				return;// "sorry, not implemented yet.";				
+				return;		
 			}
 			else {
 				std::cout << "unknown file type" << std::endl;

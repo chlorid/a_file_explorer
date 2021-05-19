@@ -15,7 +15,7 @@ CC = g++
 AKAICFLAGS = -Wall -fPIC  -c -fpermissive -Wwrite-strings
 # define any directories containing header files other than /usr/include
 #
-INCLUDES = -I /home/ich/toolchains/boost_1_75_0/stage/lib
+INCLUDES = -I /home/ich/toolchains/boost_1_75_0/stage/lib -I hxc
 AKAIDIR = akaiutil
 CFLAGS = -Wall -std=c++14 -fPIC -I./$(AKAIDIR)
 #INCLUDES = "./"
@@ -23,14 +23,15 @@ CFLAGS = -Wall -std=c++14 -fPIC -I./$(AKAIDIR)
 # define library paths in addition to /usr/lib
 #   if I wanted to include libraries not in /usr/lib I'd specify
 #   their path using -Lpath, something like:
-LFLAGS = -L/home/ich/toolchains/boost_1_75_0
+LFLAGS = -L/home/ich/toolchains/boost_1_75_0 -L hxc
 #./akaiutil  
 #LFLAGS = ""
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
 # LIBS = -static -lwt -lwthttp 
-LIBS = -lwt -lwthttp 
+LIBS = -lwt -lwthttp -ldl
+#-lhxcfe
 
 # define the C source files
 SRCS = TreeViewDragDrop.c FolderView.c AkaiProgram.c

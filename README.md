@@ -1,5 +1,6 @@
 # a(kai)_file_explorer
 This is a web gui based tool to handle Akai S900/950, S1000,S1100/S3000 file System containers as well as harddisks formatted with one of the machines.
+After a request I added support for importing hfe images of S3000 disks made for gotek drives. To make this work, you need a library. This is described further below.
 
 The program pretty much gives akaiutil by Klaus Michael Indlekofer (Available here: https://sourceforge.net/projects/akaiutil/) a web based GUI.
 I distribute a slightly modified version of the program to create a library from it. The Program is published under the GNU 2.0 public license.
@@ -42,7 +43,9 @@ For Linux:
 Download it at www.webtoolkit.eu and follow the installation instructions provided. For older Linux versions you might find Wt in the packet sources. The packet is named witty.
 Download the project a_file explorer to a local directory and compile with "make all".
 
-Complete instructions for MacOs (Thanks to δέλτα άλφα)
+
+
+Complete instructions for MacOs (Thanks to δέλτα άλφα):
 
 1) Install Xcode (free download from the Apple App Store)
 
@@ -146,7 +149,7 @@ execute the binary as follows:
 
 --http-address serves to the entire network. By choosing te localhost IP 127.0.0.1, you limit access to the local computer.
 --http-port is the port the program is serving the web gui to. you can also choose 80, if you dont serve other webpage from the PC the program is run on. Then you can omit the port 			when opening the user interface in the browser.
---config The config file for WT. Settings regarding the web interface can be changed there.
+--config The config file for WT. Settings regarding the web interface can be changed there. Make sure the right config file is loaded, as file upload will not work with the stanard one.
 
 After executing the command, you should see a message saying the program is listening on Ip xxx and Por yyy.
 
@@ -155,6 +158,18 @@ Now open a browser and enter http://hostname:port (on a local installation for e
 
 In order to stop the app press control+c on the Terminal window that you used to run it. If you closed that Terminal window and the program is still running,
 just open a new one and run the command: sudo killall afe.wt.
+
+# Using HXC floppy Emulator to load gotek hfe images
+
+Download a snapshot from the repository:
+https://sourceforge.net/p/hxcfloppyemu/code/HEAD/tree/HxCFloppyEmulator/
+I used version r2479.
+I couldnt make the library compile standalone, so I downloaded the entire repository. Maybe someone figures it out and sends me a solution?
+Enter the build directory on a console window and execute Make all.
+
+Copy the /build/libhxcfe.so file and the ../libhxcfe/.../.../.../sources/libhxcfe.h file to a_file_explorer/hxc/
+
+That's it. You should now be able to import your hfe images successfully. Please note, that they need a hfe or HFE file extension!
 
 # Disclaimer
 
